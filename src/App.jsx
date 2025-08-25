@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import BootSequence from './components/BootStrap/BootSequence';
 import Desktop from './components/Desktop/desktop';
 import Settings from './components/Desktop/Settings';
+import Taskbar from './components/Taskbar/Taskbar';
+import SudokuApp from './components/Sudoku/Sudoku';
 
-import defaultWallpaper from './assets/default.jpg';
+import defaultWallpaper from './assets/default.gif';
 import wallpaper1 from './assets/wall1.jpg';
 import wallpaper2 from './assets/wall2.jpg';
 import wallpaper3 from './assets/wall3.jpg';
@@ -15,6 +17,7 @@ function App() {
   const [textSize, setTextSize] = useState('text-base');
   const [cursor, setCursor] = useState('cursor-default');
   const [showSettings, setShowSettings] = useState(false);
+  const [showSudoku, setShowSudoku] = useState(false);
 
   const wallpapers = [
     defaultWallpaper,
@@ -22,6 +25,14 @@ function App() {
     wallpaper2,
     wallpaper3,
     wallpaper4,
+  ];
+
+  // Sample apps for the taskbar
+  const apps = [
+    { name: 'Browser', icon: '/icons/browser.png' },
+    { name: 'Terminal', icon: '/icons/terminal.png' },
+    { name: 'VS Code', icon: '/icons/vscode.png' },
+    { name: 'Portfolio', icon: '/icons/portfolio.png' },
   ];
 
   return (
@@ -33,6 +44,7 @@ function App() {
           <Desktop
             wallpaper={wallpaper}
             onOpenSettings={() => setShowSettings(true)}
+            onOpenSudoku={() => setShowSudoku(true)}
           />
           {showSettings && (
             <Settings
@@ -43,6 +55,8 @@ function App() {
               onClose={() => setShowSettings(false)}
             />
           )}
+          {showSudoku && <SudokuApp onClose={() => setShowSudoku(false)} />}
+          <Taskbar apps={apps} />
         </>
       )}
     </div>
