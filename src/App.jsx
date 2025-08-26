@@ -3,7 +3,10 @@ import BootSequence from './components/BootStrap/BootSequence';
 import Desktop from './components/Desktop/desktop';
 import Settings from './components/Desktop/Settings';
 import Taskbar from './components/Taskbar/Taskbar';
-import SudokuApp from './components/Sudoku/Sudoku';
+import SudokuApp from './components/Games/Sudoku/Sudoku';
+import TicTacToe from './components/Games/TicTacToe/tictactoe';
+import Pong from './components/Games/Pong/pong';
+import SnakeGame from './components/Games/Snake/snake';
 
 import defaultWallpaper from './assets/default.gif';
 import wallpaper1 from './assets/wall1.jpg';
@@ -18,6 +21,9 @@ function App() {
   const [cursor, setCursor] = useState('cursor-default');
   const [showSettings, setShowSettings] = useState(false);
   const [showSudoku, setShowSudoku] = useState(false);
+  const [showTicTacToe, setShowTicTacToe] = useState(false);
+  const [showPong, setShowPong] = useState(false);
+  const [showSnake, setShowSnake] = useState(false);
 
   const wallpapers = [
     defaultWallpaper,
@@ -45,6 +51,9 @@ function App() {
             wallpaper={wallpaper}
             onOpenSettings={() => setShowSettings(true)}
             onOpenSudoku={() => setShowSudoku(true)}
+            onOpenTicTacToe={() => setShowTicTacToe(true)}
+            onOpenPong={() => setShowPong(true)}
+            onOpenSnake={() => setShowSnake(true)}
           />
           {showSettings && (
             <Settings
@@ -56,6 +65,11 @@ function App() {
             />
           )}
           {showSudoku && <SudokuApp onClose={() => setShowSudoku(false)} />}
+          {showTicTacToe && (
+            <TicTacToe onClose={() => setShowTicTacToe(false)} />
+          )}
+          {showPong && <Pong onClose={() => setShowPong(false)} />}
+          {showSnake && <SnakeGame onClose={() => setShowSnake(false)} />}
           <Taskbar apps={apps} />
         </>
       )}
