@@ -21,6 +21,39 @@
   box-sizing: border-box;
 }
 
+/* Cursor styles for draggable windows */
+* {
+  cursor: default !important;
+}
+
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+.no-drag {
+  cursor: pointer !important;
+}
+
+/* Game canvas elements should have pointer cursor */
+canvas {
+  cursor: pointer !important;
+}
+
+button {
+  cursor: pointer !important;
+}
+
+a {
+  cursor: pointer !important;
+}
+
+/* Specific overrides for certain elements */
+input,
+textarea,
+select {
+  cursor: text !important;
+}
+
 html,
 body {
   margin: 0;

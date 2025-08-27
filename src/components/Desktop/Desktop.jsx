@@ -37,7 +37,7 @@ export default function Desktop({
               e.target.nextSibling.style.display = 'block';
             }}
           />
-          <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white text-xl font-bold mb-1 hidden">
+          <div className="w-12 h-12 bg-blue-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
             S
           </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
@@ -62,7 +62,7 @@ export default function Desktop({
               e.target.nextSibling.style.display = 'block';
             }}
           />
-          <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center text-white text-xl font-bold mb-1 hidden">
+          <div className="w-12 h-12 bg-red-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
             ⚡
           </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
@@ -87,7 +87,7 @@ export default function Desktop({
               e.target.nextSibling.style.display = 'block';
             }}
           />
-          <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center text-white text-xl font-bold mb-1 hidden">
+          <div className="w-12 h-12 bg-green-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
             P
           </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
@@ -112,8 +112,7 @@ export default function Desktop({
               e.target.nextSibling.style.display = 'block';
             }}
           />
-          <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center text-white text-xl font-bold mb-1 hidden">
-            🐍
+          <div className="w-12 h-12 bg-yellow-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
           </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Snake

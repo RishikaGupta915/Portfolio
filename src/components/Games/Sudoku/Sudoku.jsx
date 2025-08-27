@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 
 /* ---------------------------- helpers ---------------------------- */
@@ -79,7 +79,7 @@ function SudokuCell({
       onClick={() => onSelect(r, c)}
       className={[
         'relative aspect-square w-11 sm:w-12 md:w-14 flex items-center justify-center',
-        'transition-colors select-none',
+        'transition-colors select-none no-drag cursor-pointer',
         'border border-pink-500/30 ' + boxBorder,
         selected ? 'bg-pink-500/20' : 'bg-black/30',
         isError ? 'ring-2 ring-red-500/70' : '',
@@ -128,6 +128,55 @@ function SudokuCell({
 }
 
 export default function SudokuApp({ onClose }) {
+  // Dragging functionality
+  const modalRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e) => {
+    // Only allow dragging from the title bar area (not no-drag elements)
+    if (e.target.closest('.no-drag')) return;
+
+    const rect = modalRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+
+    const newX = e.clientX - dragOffset.x;
+    const newY = e.clientY - dragOffset.y;
+
+    // Keep within viewport bounds
+    const maxX = window.innerWidth - (modalRef.current?.offsetWidth || 0);
+    const maxY = window.innerHeight - (modalRef.current?.offsetHeight || 0);
+
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY)),
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
+
   // base puzzle
   const base = useMemo(
     () =>
@@ -232,7 +281,21 @@ export default function SudokuApp({ onClose }) {
   /* ------------------------------- UI ------------------------------ */
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-      <div className="bg-gray-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl mx-auto max-w-[min(92vw,820px)] w-full p-6">
+      <div
+        ref={modalRef}
+        className="bg-gray-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl mx-auto max-w-[min(92vw,820px)] w-full p-6 select-none"
+        style={{
+          position: 'fixed',
+          left:
+            position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
+          top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
+          transform:
+            position.x === 0 && position.y === 0
+              ? 'translate(-50%, -50%)'
+              : 'none',
+        }}
+        onMouseDown={handleMouseDown}
+      >
         {/* header */}
         <div className="mb-4 flex items-center justify-between">
           <motion.h1
@@ -240,7 +303,7 @@ export default function SudokuApp({ onClose }) {
             animate={{ opacity: 1, y: 0 }}
             className="text-pink-300 drop-shadow-[0_0_15px_rgba(255,0,255,0.35)] tracking-wider font-semibold"
           >
-            ★ Sudoku 
+            ★ Sudoku
           </motion.h1>
           <div className="flex items-center space-x-4">
             <div className="text-cyan-300 text-sm tabular-nums">
@@ -250,7 +313,7 @@ export default function SudokuApp({ onClose }) {
             {onClose && (
               <button
                 onClick={onClose}
-                className="text-white/60 hover:text-white text-xl font-bold w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 transition-colors"
+                className="no-drag text-white/60 hover:text-white text-xl font-bold w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 transition-colors cursor-pointer"
               >
                 ×
               </button>
@@ -258,7 +321,7 @@ export default function SudokuApp({ onClose }) {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start">
+        <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start no-drag">
           {/* board */}
           <div className="rounded-xl bg-gradient-to-br from-fuchsia-900/50 via-black/60 to-cyan-900/40 p-3 border border-pink-500/30 shadow-[0_0_40px_rgba(255,0,255,0.15)]">
             <div
@@ -289,7 +352,7 @@ export default function SudokuApp({ onClose }) {
           {/* controls */}
           <div className="flex md:flex-col gap-3 md:w-48">
             <button
-              className={`px-3 py-2 rounded-lg border border-pink-500/40 bg-pink-500/20 hover:bg-pink-500/30 text-pink-100`}
+              className="px-3 py-2 rounded-lg border border-pink-500/40 bg-pink-500/20 hover:bg-pink-500/30 text-pink-100 no-drag cursor-pointer"
               onClick={() => setNoteMode((m) => !m)}
             >
               ✎ Notes:{' '}
@@ -300,33 +363,33 @@ export default function SudokuApp({ onClose }) {
                 <button
                   key={n}
                   onClick={() => handleInput(n)}
-                  className="rounded-md py-2 text-sm border border-cyan-400/40 bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-200"
+                  className="rounded-md py-2 text-sm border border-cyan-400/40 bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-200 no-drag cursor-pointer"
                 >
                   {n}
                 </button>
               ))}
               <button
                 onClick={() => handleInput(0)}
-                className="col-span-2 md:col-span-3 rounded-md py-2 text-sm border border-fuchsia-400/40 bg-fuchsia-400/10 hover:bg-fuchsia-400/20 text-fuchsia-200"
+                className="col-span-2 md:col-span-3 rounded-md py-2 text-sm border border-fuchsia-400/40 bg-fuchsia-400/10 hover:bg-fuchsia-400/20 text-fuchsia-200 no-drag cursor-pointer"
               >
                 Clear (Del)
               </button>
             </div>
             <button
               onClick={hint}
-              className="px-3 py-2 rounded-lg border border-cyan-400/40 bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-200"
+              className="px-3 py-2 rounded-lg border border-cyan-400/40 bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-200 no-drag cursor-pointer"
             >
               ✨ Hint
             </button>
             <button
               onClick={solve}
-              className="px-3 py-2 rounded-lg border border-emerald-400/40 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-200"
+              className="px-3 py-2 rounded-lg border border-emerald-400/40 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-200 no-drag cursor-pointer"
             >
               ✅ Solve
             </button>
             <button
               onClick={resetPuzzle}
-              className="px-3 py-2 rounded-lg border border-pink-500/40 bg-pink-500/10 hover:bg-pink-500/20 text-pink-100"
+              className="px-3 py-2 rounded-lg border border-pink-500/40 bg-pink-500/10 hover:bg-pink-500/20 text-pink-100 no-drag cursor-pointer"
             >
               ♻ Reset
             </button>
