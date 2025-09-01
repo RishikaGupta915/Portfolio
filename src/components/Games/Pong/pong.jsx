@@ -1,12 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-interface PongProps {
-  onClose?: () => void;
-}
-
-export default function PongGame({ onClose }: PongProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const modalRef = useRef<HTMLDivElement | null>(null);
+export default function PongGame({ onClose }) {
+  const canvasRef = useRef(null);
+  const modalRef = useRef(null);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -24,9 +20,8 @@ export default function PongGame({ onClose }: PongProps) {
   };
 
   // Drag functionality
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.no-drag')) return;
-
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.no-drag')) return;
     setIsDragging(true);
     const rect = modalRef.current?.getBoundingClientRect();
     if (rect) {
@@ -37,18 +32,15 @@ export default function PongGame({ onClose }: PongProps) {
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = (e) => {
     if (!isDragging) return;
-
     const newX = e.clientX - dragOffset.x;
     const newY = e.clientY - dragOffset.y;
-
     const modal = modalRef.current;
     if (modal) {
       const modalRect = modal.getBoundingClientRect();
       const maxX = window.innerWidth - modalRect.width;
       const maxY = window.innerHeight - modalRect.height;
-
       setPosition({
         x: Math.max(0, Math.min(newX, maxX)),
         y: Math.max(0, Math.min(newY, maxY)),
@@ -56,9 +48,7 @@ export default function PongGame({ onClose }: PongProps) {
     }
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUp = () => setIsDragging(false);
 
   useEffect(() => {
     if (isDragging) {
@@ -72,10 +62,11 @@ export default function PongGame({ onClose }: PongProps) {
   }, [isDragging, dragOffset]);
 
   // Simple beep function for sound effects
-  const playSound = (frequency: number, duration: number = 100) => {
+  const playSound = (frequency, duration = 100) => {
     try {
-      const audioContext = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const audioContext = new AudioCtx();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
@@ -93,8 +84,8 @@ export default function PongGame({ onClose }: PongProps) {
 
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + duration / 1000);
-    } catch (error) {
-      // Silently fail if audio context is not supported
+    } catch (_) {
+      // Ignore audio errors
     }
   };
 
@@ -114,7 +105,6 @@ export default function PongGame({ onClose }: PongProps) {
     let dx = 2;
     let dy = -2;
 
-    // Reset positions when game restarts
     if (gameStarted) {
       x = canvas.width / 2;
       y = canvas.height - 30;
@@ -127,30 +117,23 @@ export default function PongGame({ onClose }: PongProps) {
     let leftPressed = false;
 
     function keyDownHandler(e) {
-      if (e.key === 'Right' || e.key === 'ArrowRight') {
-        rightPressed = true;
-      } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
-        leftPressed = true;
-      }
+      if (e.key === 'Right' || e.key === 'ArrowRight') rightPressed = true;
+      else if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = true;
     }
 
     function keyUpHandler(e) {
-      if (e.key === 'Right' || e.key === 'ArrowRight') {
-        rightPressed = false;
-      } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
-        leftPressed = false;
-      }
+      if (e.key === 'Right' || e.key === 'ArrowRight') rightPressed = false;
+      else if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = false;
     }
 
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
 
     function drawPaddle() {
-      if (!ctx) return;
       ctx.beginPath();
       ctx.rect(
         paddleX,
-        (canvas?.height ?? 0) - paddleHeight - 10,
+        canvas.height - paddleHeight - 10,
         paddleWidth,
         paddleHeight
       );
@@ -160,7 +143,6 @@ export default function PongGame({ onClose }: PongProps) {
     }
 
     function drawBall() {
-      if (!ctx) return;
       ctx.beginPath();
       ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
       ctx.fillStyle = '#ffb3ff';
@@ -169,17 +151,11 @@ export default function PongGame({ onClose }: PongProps) {
     }
 
     function drawBackground() {
-      if (!ctx) return;
-      const gradient = ctx.createLinearGradient(
-        0,
-        0,
-        canvas?.width ?? 0,
-        canvas?.height ?? 0
-      );
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
       gradient.addColorStop(0, '#1a001a');
       gradient.addColorStop(1, '#330033');
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas?.width ?? 0, canvas?.height ?? 0);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
     function draw() {
@@ -187,23 +163,22 @@ export default function PongGame({ onClose }: PongProps) {
       drawBackground();
       drawBall();
       drawPaddle();
-      // Removed drawScore() call
 
       if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
         dx = -dx;
-        playSound(800, 50); // Wall bounce sound
+        playSound(800, 50);
       }
       if (y + dy < ballRadius) {
         dy = -dy;
-        playSound(800, 50); // Top wall bounce sound
+        playSound(800, 50);
       } else if (y + dy > canvas.height - ballRadius - 10) {
         if (x > paddleX && x < paddleX + paddleWidth) {
-          dy = -dy;
-          playSound(400, 100); // Paddle hit sound
-          setScore((prev) => prev + 1);
+            dy = -dy;
+            playSound(400, 100);
+            setScore((prev) => prev + 1);
         } else if (y + dy > canvas.height - ballRadius) {
           setGameOver(true);
-          playSound(200, 200); // Game over sound
+          playSound(200, 200);
           return;
         }
       }
@@ -211,20 +186,13 @@ export default function PongGame({ onClose }: PongProps) {
       x += dx;
       y += dy;
 
-      if (rightPressed && paddleX < canvas.width - paddleWidth) {
-        paddleX += 7;
-      } else if (leftPressed && paddleX > 0) {
-        paddleX -= 7;
-      }
+      if (rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 7;
+      else if (leftPressed && paddleX > 0) paddleX -= 7;
 
-      if (!gameOver) {
-        requestAnimationFrame(draw);
-      }
+      if (!gameOver) requestAnimationFrame(draw);
     }
 
-    if (gameStarted && !gameOver) {
-      draw();
-    }
+    if (gameStarted && !gameOver) draw();
 
     return () => {
       document.removeEventListener('keydown', keyDownHandler);
@@ -239,9 +207,8 @@ export default function PongGame({ onClose }: PongProps) {
         className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg p-4 max-w-lg w-full mx-4 relative shadow-2xl border border-gray-700 select-none"
         style={{
           position: 'fixed',
-          left:
-            position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
-          top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
+          left: position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
+            top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
           transform:
             position.x === 0 && position.y === 0
               ? 'translate(-50%, -50%)'
@@ -249,7 +216,6 @@ export default function PongGame({ onClose }: PongProps) {
         }}
         onMouseDown={handleMouseDown}
       >
-        {/* Title bar for dragging */}
         <div className="flex items-center justify-between mb-3 p-2 rounded bg-gray-800 bg-opacity-50">
           <h2 className="text-white text-lg font-bold">⚾ Pong</h2>
           <button
