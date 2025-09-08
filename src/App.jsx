@@ -8,6 +8,7 @@ import TicTacToe from './components/Games/TicTacToe/tictactoe';
 import Pong from './components/Games/Pong/pong';
 import SnakeGame from './components/Games/Snake/snake';
 import PaintApp from './components/Games/paint/paint';
+import Certificates from './components/About/certificates';
 
 import defaultWallpaper from './assets/default.gif';
 import wallpaper1 from './assets/wall1.jpg';
@@ -26,6 +27,7 @@ function App() {
   const [showPong, setShowPong] = useState(false);
   const [showSnake, setShowSnake] = useState(false);
   const [showPaint, setShowPaint] = useState(false);
+  const [showCertificates, setShowCertificates] = useState(false);
 
   const wallpapers = [
     defaultWallpaper,
@@ -57,6 +59,7 @@ function App() {
             onOpenPong={() => setShowPong(true)}
             onOpenSnake={() => setShowSnake(true)}
             onOpenPaint={() => setShowPaint(true)}
+            onOpenCertificates={() => setShowCertificates(true)}
           />
           {showSettings && (
             <Settings
@@ -74,6 +77,9 @@ function App() {
           {showPong && <Pong onClose={() => setShowPong(false)} />}
           {showSnake && <SnakeGame onClose={() => setShowSnake(false)} />}
           {showPaint && <PaintApp onClose={() => setShowPaint(false)} />}
+          {showCertificates && (
+            <Certificates onClose={() => setShowCertificates(false)} />
+          )}
           <Taskbar apps={apps} />
         </>
       )}

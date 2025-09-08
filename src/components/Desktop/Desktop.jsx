@@ -6,6 +6,7 @@ import pongIcon from '../../assets/pong.png';
 import snakeIcon from '../../assets/snake.png';
 import settingsIcon from '../../assets/settings.png';
 import paintIcon from '../../assets/paint.png';
+import certificatesIcon from '../../assets/certificate.png';
 
 export default function Desktop({
   wallpaper,
@@ -15,6 +16,7 @@ export default function Desktop({
   onOpenPong,
   onOpenSnake,
   onOpenPaint,
+  onOpenCertificates,
 }) {
   return (
     <div
@@ -23,7 +25,6 @@ export default function Desktop({
     >
       {/* Desktop Icons */}
       <div className="absolute top-4 left-4 flex flex-col space-y-4">
-
         {/* Sudoku Game Icon */}
         <motion.div
           whileHover={{ scale: 1.1 }}
@@ -126,7 +127,7 @@ export default function Desktop({
         <motion.div
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-            onClick={onOpenSettings}
+          onClick={onOpenSettings}
           className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
         >
           <img
@@ -171,7 +172,39 @@ export default function Desktop({
             Paint
           </span>
         </motion.div>
+      </div>
 
+      <div className="absolute top-4 left-28 flex flex-col space-y-4">
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onOpenCertificates}
+          className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
+        >
+          <img
+            src={certificatesIcon}
+            alt="Certificates"
+            className="w-12 h-12 mb-1"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling;
+              if (fallback) {
+                fallback.style.display = 'flex';
+                fallback.style.alignItems = 'center';
+                fallback.style.justifyContent = 'center';
+              }
+            }}
+          />
+          <div
+            className="w-12 h-12 bg-purple-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1"
+            style={{ display: 'none' }}
+          >
+            📜
+          </div>
+          <span className="text-white text-xs font-medium text-center drop-shadow-lg">
+            Certificates
+          </span>
+        </motion.div>
       </div>
     </div>
   );

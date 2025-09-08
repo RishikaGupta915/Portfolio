@@ -272,7 +272,7 @@ function BootSequence({ onComplete }) {
                   color: '#ff1493',
                   fontWeight: 'bold',
                   textShadow: '0 0 20px #ff00ff, 0 0 40px #ff00ff',
-                  margin: 0,
+                  marginTop: '4rem',
                 }}
               >
                 System Ready
@@ -287,8 +287,7 @@ function BootSequence({ onComplete }) {
                   color: '#00ffff',
                   letterSpacing: '0.05em',
                   textShadow: '0 0 15px #00ffff',
-                  margin: 0,
-                  marginTop: '1rem',
+                  marginTop: '2rem',
                 }}
               >
                 Welcome to my Portfolio
