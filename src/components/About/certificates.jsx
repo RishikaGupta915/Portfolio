@@ -1,390 +1,254 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Generate certificates data from PDF files in assets/COURSES folder
 const generateCertificatesData = () => {
   const pdfFiles = [
-    'Coursera 0MELA1OXFOWU.pdf',
-    'Coursera 1JCBTDGBBLBV.pdf',
-    'Coursera 2OOU1STR3LHY.pdf',
-    'Coursera 30LJOVY6UIXL.pdf',
-    'Coursera 382M0WER3PE8.pdf',
-    'Coursera 4GZH5KGG2UIH.pdf',
-    'Coursera 7H5QTC3DPQ2D.pdf',
-    'Coursera 865FFJD9B6FT.pdf',
-    'Coursera 9AXYGY6U946C.pdf',
-    'Coursera ALIX2P3Y44Y7.pdf',
-    'Coursera AQ6JATSOP4LX.pdf',
-    'Coursera B7PKUM0HIY3M.pdf',
-    'Coursera BJA9PHH9DAAK.pdf',
-    'Coursera CQEUOUJYB4TZ.pdf',
-    'Coursera CX0Z14SM0X59.pdf',
-    'Coursera DJV38Z4RWGN3.pdf',
-    'Coursera DWFQJUAE3VSJ.pdf',
-    'Coursera EXZ94GSVDHJL.pdf',
-    'Coursera FLWLP1V5XWVP.pdf',
-    'Coursera FUBG5K0IG304.pdf',
-    'Coursera GJJJR171HBNU.pdf',
-    'Coursera H06ABLCRNYXM.pdf',
-    'Coursera HZF5ZVTQ1F41.pdf',
-    'Coursera L4Y9RNPOAKBZ.pdf',
-    'Coursera LQFVGQBI169P.pdf',
-    'Coursera M0C6IBZI6VBH.pdf',
-    'Coursera N8XEWLBETYXI.pdf',
-    'Coursera NQ32KQ8361GT.pdf',
-    'Coursera OW1Y8QSU3IOI.pdf',
-    'Coursera PU0OKZAIMHJC.pdf',
-    'Coursera QDHIAMH4DND0.pdf',
-    'Coursera RBTVOAZKN1FF.pdf',
-    'Coursera RDSCCQQJX5XN.pdf',
-    'Coursera SE9QE7BPCLHB.pdf',
-    'Coursera SK3X211GXSKP.pdf',
-    'Coursera UCFPH0KF0FVW.pdf',
-    'Coursera USF4EOY18PJW.pdf',
-    'Coursera XUUNU4CXJ7W3.pdf',
-    'Coursera Z4KQV8JF2KOR.pdf',
-    'Coursera ZEYEF2B2TGK2.pdf',
-    'Coursera ZV3P4G1HQOEL.pdf',
-    'Coursera ZWREDP7G0R5X.pdf',
+    'Advanced Networking, Virtualization, and IT.pdf',
+    'Advanced React.pdf',
+    'Asset Security.pdf',
+    'Back-End Development.pdf',
+    'C programming.pdf',
+    'C, Go and C++.pdf',
+    'C-Structured Programming.pdf',
+    'CISSP.pdf',
+    'Cloud Computing.pdf',
+    'Coding Interview Preparation.pdf',
+    'Communication and Network Security.pdf',
+    'CompTIA A+ Certification.pdf',
+    'Cybersecurity Attack and.pdf',
+    'Digital Forensics Essentials (DFE).pdf',
+    'Ethical Hacking Essentials (EHE).pdf',
+    'Front-End Development.pdf',
+    'Generative AI Introduction and Applications.pdf',
+    'Generative AI Prompt Engineering Basics.pdf',
+    'Go Programming II.pdf',
+    'Go Programming.pdf',
+    'HTML and CSS in depth.pdf',
+    'Identity and Access Management (IAM).pdf',
+    'Introduction to Blockchain Technologies.pdf',
+    'Introduction to Databases for Back-End.pdf',
+    'IT Fundamentals and Hardware Essentials.pdf',
+    'Network Defense Essentials (NDE).pdf',
+    'Networking, Peripherals, and Wireless.pdf',
+    'Programming in Python.pdf',
+    'Programming with JavaScript.pdf',
+    'Python Basics.pdf',
+    'Python Functions, Files, and Dictionaries.pdf',
+    'Python Project.pdf',
+    'Python.pdf',
+    'React Basics.pdf',
+    'Secure Software Development.pdf',
+    'Security and Risk Management.pdf',
+    'Security Architecture and Engineering.pdf',
+    'Security Assessment and Testing.pdf',
+    'Security Operations.pdf',
+    'Software Engineering.pdf',
+    'Transacting on the Blockchain.pdf',
+    'Version Control.pdf',
   ];
 
-  // Certificate categorization based on PDF names and course content
-  const certificateMapping = {
-    '0MELA1OXFOWU': {
-      title: 'Python Programming Fundamentals',
-      category: 'Python',
-      skills: ['Python', 'Programming', 'Data Types', 'Functions'],
-    },
-    '1JCBTDGBBLBV': {
-      title: 'Network Security Essentials',
-      category: 'Network and Security',
-      skills: ['Network Security', 'Protocols', 'Security', 'Infrastructure'],
-    },
-    '2OOU1STR3LHY': {
-      title: 'HTML CSS Javascript Basics',
-      category: 'Html Css and Javascript',
-      skills: ['HTML', 'CSS', 'JavaScript', 'Web Development'],
-    },
-    '30LJOVY6UIXL': {
-      title: 'React Development',
-      category: 'React',
-      skills: ['React', 'JSX', 'Components', 'Hooks'],
-    },
-    '382M0WER3PE8': {
-      title: 'Backend Development with Node.js',
-      category: 'Frontend and Backend',
-      skills: ['Node.js', 'Backend', 'API Development', 'Server-side'],
-    },
-    '4GZH5KGG2UIH': {
-      title: 'Go Programming Language',
-      category: 'Go Programming',
-      skills: ['Go', 'Golang', 'Programming', 'Concurrency'],
-    },
-    '7H5QTC3DPQ2D': {
-      title: 'Advanced Python Programming',
-      category: 'Python',
-      skills: ['Python', 'Advanced Programming', 'OOP', 'Libraries'],
-    },
-    '865FFJD9B6FT': {
-      title: 'Generative AI and Machine Learning',
-      category: 'Gen Ai',
-      skills: [
-        'Generative AI',
-        'Machine Learning',
-        'AI Models',
-        'Deep Learning',
-      ],
-    },
-    '9AXYGY6U946C': {
-      title: 'Frontend Development Frameworks',
-      category: 'Frontend and Backend',
-      skills: ['Frontend', 'UI Development', 'Framework', 'User Interface'],
-    },
-    ALIX2P3Y44Y7: {
-      title: 'Cybersecurity Fundamentals',
-      category: 'Cybersecurity',
-      skills: [
-        'Cybersecurity',
-        'Information Security',
-        'Threat Analysis',
-        'Protection',
-      ],
-    },
-    AQ6JATSOP4LX: {
-      title: 'Software Engineering Principles',
-      category: 'Software',
-      skills: [
-        'Software Engineering',
-        'Design Patterns',
-        'Architecture',
-        'Best Practices',
-      ],
-    },
-    B7PKUM0HIY3M: {
-      title: 'Blockchain Technology',
-      category: 'Blockchain',
-      skills: ['Blockchain', 'Cryptocurrency', 'Smart Contracts', 'DeFi'],
-    },
-    BJA9PHH9DAAK: {
-      title: 'Network Programming and Security',
-      category: 'Network and Security',
-      skills: [
-        'Network Programming',
-        'Security Protocols',
-        'Network Architecture',
-        'Communication',
-      ],
-    },
-    CQEUOUJYB4TZ: {
-      title: 'Python Data Science',
-      category: 'Python',
-      skills: ['Python', 'Data Science', 'Pandas', 'NumPy'],
-    },
-    CX0Z14SM0X59: {
-      title: 'Advanced JavaScript Development',
-      category: 'Html Css and Javascript',
-      skills: ['JavaScript', 'ES6+', 'Async Programming', 'DOM Manipulation'],
-    },
-    DJV38Z4RWGN3: {
-      title: 'Software Development Lifecycle',
-      category: 'Software',
-      skills: [
-        'SDLC',
-        'Development',
-        'Project Management',
-        'Quality Assurance',
-      ],
-    },
-    DWFQJUAE3VSJ: {
-      title: 'Advanced Cybersecurity',
-      category: 'Cybersecurity',
-      skills: [
-        'Advanced Security',
-        'Penetration Testing',
-        'Incident Response',
-        'Security Analysis',
-      ],
-    },
-    EXZ94GSVDHJL: {
-      title: 'Full Stack Development',
-      category: 'Frontend and Backend',
-      skills: ['Full Stack', 'Frontend', 'Backend', 'Web Development'],
-    },
-    FLWLP1V5XWVP: {
-      title: 'React Advanced Concepts',
-      category: 'React',
-      skills: [
-        'React',
-        'Advanced React',
-        'State Management',
-        'Performance Optimization',
-      ],
-    },
-    FUBG5K0IG304: {
-      title: 'C Programming Language',
-      category: 'C Programming',
-      skills: [
+  // Certificate categorization based on actual course content
+  const getCertificateCategory = (filename) => {
+    const name = filename.toLowerCase();
+
+    if (name.includes('python')) return 'Python';
+    if (name.includes('react')) return 'React';
+    if (
+      name.includes('javascript') ||
+      name.includes('html') ||
+      name.includes('css')
+    )
+      return 'Html Css and Javascript';
+    if (name.includes('go programming') || name.includes('go and c++'))
+      return 'Go Programming';
+    if (
+      name.includes('c programming') ||
+      name.includes('c-structured') ||
+      name.includes('c,')
+    )
+      return 'C Programming';
+    if (
+      name.includes('front-end') ||
+      name.includes('back-end') ||
+      name.includes('databases')
+    )
+      return 'Frontend and Backend';
+    if (
+      name.includes('network') ||
+      name.includes('it fundamentals') ||
+      name.includes('comptia')
+    )
+      return 'Network and Security';
+    if (
+      name.includes('security') ||
+      name.includes('cissp') ||
+      name.includes('cybersecurity') ||
+      name.includes('ethical hacking') ||
+      name.includes('forensics') ||
+      name.includes('iam')
+    )
+      return 'Cybersecurity';
+    if (name.includes('blockchain') || name.includes('transacting'))
+      return 'Blockchain';
+    if (name.includes('generative ai') || name.includes('ai introduction'))
+      return 'Gen Ai';
+    if (
+      name.includes('software engineering') ||
+      name.includes('coding interview') ||
+      name.includes('version control')
+    )
+      return 'Software';
+    if (name.includes('cloud computing')) return 'Developments';
+
+    return 'Software'; // Default category
+  };
+
+  const getCertificateSkills = (filename) => {
+    const name = filename.toLowerCase();
+
+    // Return relevant skills based on filename
+    if (name.includes('python')) {
+      if (name.includes('basics'))
+        return ['Python', 'Programming', 'Fundamentals', 'Syntax'];
+      if (name.includes('functions'))
+        return ['Python', 'Functions', 'File Handling', 'Data Structures'];
+      if (name.includes('project'))
+        return [
+          'Python',
+          'Project Development',
+          'Application Building',
+          'Problem Solving',
+        ];
+      return ['Python', 'Programming', 'Development', 'Scripting'];
+    }
+
+    if (name.includes('react')) {
+      if (name.includes('advanced'))
+        return [
+          'React',
+          'Advanced Concepts',
+          'State Management',
+          'Performance',
+        ];
+      return ['React', 'Components', 'JSX', 'Frontend'];
+    }
+
+    if (name.includes('javascript'))
+      return ['JavaScript', 'Programming', 'Web Development', 'ES6+'];
+    if (name.includes('html') || name.includes('css'))
+      return ['HTML', 'CSS', 'Web Design', 'Responsive Design'];
+
+    if (name.includes('go programming'))
+      return ['Go', 'Programming', 'Concurrency', 'Backend'];
+    if (
+      name.includes('c programming') ||
+      name.includes('c,') ||
+      name.includes('c-structured')
+    )
+      return [
         'C Programming',
         'System Programming',
-        'Memory Management',
-        'Algorithms',
-      ],
-    },
-    GJJJR171HBNU: {
-      title: 'Modern JavaScript Frameworks',
-      category: 'Html Css and Javascript',
-      skills: ['JavaScript', 'Frameworks', 'Modern JS', 'Web APIs'],
-    },
-    H06ABLCRNYXM: {
-      title: 'Software Testing and QA',
-      category: 'Software',
-      skills: [
-        'Software Testing',
-        'Quality Assurance',
-        'Test Automation',
-        'Debugging',
-      ],
-    },
-    HZF5ZVTQ1F41: {
-      title: 'Responsive CSS and Web Design',
-      category: 'Html Css and Javascript',
-      skills: ['CSS', 'Responsive Design', 'Web Design', 'HTML'],
-    },
-    L4Y9RNPOAKBZ: {
-      title: 'Go Microservices Development',
-      category: 'Go Programming',
-      skills: ['Go', 'Microservices', 'Distributed Systems', 'API Development'],
-    },
-    LQFVGQBI169P: {
-      title: 'General Development Practices',
-      category: 'Developments',
-      skills: [
-        'Development',
-        'Best Practices',
-        'Code Quality',
-        'Collaboration',
-      ],
-    },
-    M0C6IBZI6VBH: {
-      title: 'Python Machine Learning',
-      category: 'Python',
-      skills: ['Python', 'Machine Learning', 'Scikit-learn', 'Data Analysis'],
-    },
-    N8XEWLBETYXI: {
-      title: 'Network Infrastructure and Security',
-      category: 'Network and Security',
-      skills: [
-        'Network Infrastructure',
-        'Security',
-        'System Administration',
-        'Protocols',
-      ],
-    },
-    NQ32KQ8361GT: {
-      title: 'Generative AI Applications',
-      category: 'Gen Ai',
-      skills: [
-        'Generative AI',
-        'AI Applications',
-        'Natural Language Processing',
-        'AI Models',
-      ],
-    },
-    OW1Y8QSU3IOI: {
-      title: 'Blockchain Development',
-      category: 'Blockchain',
-      skills: [
-        'Blockchain Development',
-        'Smart Contract Programming',
-        'Web3',
-        'Solidity',
-      ],
-    },
-    PU0OKZAIMHJC: {
-      title: 'Software Architecture',
-      category: 'Software',
-      skills: [
-        'Software Architecture',
-        'System Design',
-        'Scalability',
-        'Design Patterns',
-      ],
-    },
-    QDHIAMH4DND0: {
-      title: 'C Systems Programming',
-      category: 'C Programming',
-      skills: [
-        'C Programming',
-        'Systems Programming',
-        'Operating Systems',
         'Low-level Programming',
-      ],
-    },
-    RBTVOAZKN1FF: {
-      title: 'Network Security Protocols',
-      category: 'Network and Security',
-      skills: [
-        'Network Security',
-        'Security Protocols',
-        'Encryption',
-        'Network Defense',
-      ],
-    },
-    RDSCCQQJX5XN: {
-      title: 'Advanced CSS and Animations',
-      category: 'Html Css and Javascript',
-      skills: [
-        'Advanced CSS',
-        'CSS Animations',
-        'Web Animations',
-        'Modern CSS',
-      ],
-    },
-    SE9QE7BPCLHB: {
-      title: 'Software Engineering Methodologies',
-      category: 'Software',
-      skills: [
-        'Software Engineering',
-        'Agile',
-        'Development Methodologies',
-        'Project Management',
-      ],
-    },
-    SK3X211GXSKP: {
-      title: 'Development Project Management',
-      category: 'Developments',
-      skills: [
-        'Project Management',
-        'Development Process',
-        'Team Collaboration',
-        'Planning',
-      ],
-    },
-    UCFPH0KF0FVW: {
-      title: 'Information Security Management',
-      category: 'Cybersecurity',
-      skills: [
+        'Algorithms',
+      ];
+
+    if (name.includes('front-end'))
+      return [
+        'Frontend',
+        'UI Development',
+        'User Experience',
+        'Web Technologies',
+      ];
+    if (name.includes('back-end'))
+      return ['Backend', 'Server-side', 'API Development', 'Database'];
+
+    if (name.includes('networking') || name.includes('network'))
+      return ['Networking', 'Network Security', 'Infrastructure', 'Protocols'];
+    if (name.includes('it fundamentals'))
+      return [
+        'IT Fundamentals',
+        'Hardware',
+        'System Administration',
+        'Technical Support',
+      ];
+    if (name.includes('comptia'))
+      return ['CompTIA', 'IT Certification', 'Hardware', 'Troubleshooting'];
+
+    if (name.includes('cybersecurity') || name.includes('security'))
+      return [
+        'Cybersecurity',
         'Information Security',
+        'Risk Management',
+        'Compliance',
+      ];
+    if (name.includes('cissp'))
+      return [
+        'CISSP',
         'Security Management',
         'Risk Assessment',
-        'Security Policies',
-      ],
-    },
-    USF4EOY18PJW: {
-      title: 'Full Stack Web Development',
-      category: 'Frontend and Backend',
-      skills: [
-        'Full Stack Development',
-        'Web Development',
-        'Frontend',
-        'Backend',
-      ],
-    },
-    XUUNU4CXJ7W3: {
-      title: 'Modern Development Tools',
-      category: 'Developments',
-      skills: [
-        'Development Tools',
-        'DevOps',
-        'Version Control',
-        'Modern Workflow',
-      ],
-    },
-    Z4KQV8JF2KOR: {
-      title: 'AI and Machine Learning',
-      category: 'Gen Ai',
-      skills: [
-        'Artificial Intelligence',
+        'Security Architecture',
+      ];
+    if (name.includes('ethical hacking'))
+      return [
+        'Ethical Hacking',
+        'Penetration Testing',
+        'Security Assessment',
+        'Vulnerability Analysis',
+      ];
+    if (name.includes('forensics'))
+      return [
+        'Digital Forensics',
+        'Incident Response',
+        'Evidence Analysis',
+        'Investigation',
+      ];
+
+    if (name.includes('blockchain'))
+      return [
+        'Blockchain',
+        'Cryptocurrency',
+        'Distributed Systems',
+        'Smart Contracts',
+      ];
+    if (name.includes('generative ai'))
+      return [
+        'Generative AI',
         'Machine Learning',
-        'Deep Learning',
-        'Neural Networks',
-      ],
-    },
-    ZEYEF2B2TGK2: {
-      title: 'Advanced Software Development',
-      category: 'Software',
-      skills: [
-        'Advanced Development',
+        'AI Applications',
+        'Prompt Engineering',
+      ];
+
+    if (name.includes('software engineering'))
+      return [
         'Software Engineering',
-        'Code Architecture',
-        'Performance',
-      ],
-    },
-    ZV3P4G1HQOEL: {
-      title: 'Business Development Strategies',
-      category: 'Developments',
-      skills: ['Business Development', 'Strategy', 'Analytics', 'Growth'],
-    },
-    ZWREDP7G0R5X: {
-      title: 'Comprehensive Software Development',
-      category: 'Software',
-      skills: [
-        'Software Development',
-        'Programming',
-        'Development Lifecycle',
+        'Development Practices',
+        'Software Architecture',
         'Best Practices',
-      ],
-    },
+      ];
+    if (name.includes('coding interview'))
+      return [
+        'Interview Preparation',
+        'Problem Solving',
+        'Algorithms',
+        'Data Structures',
+      ];
+    if (name.includes('version control'))
+      return ['Version Control', 'Git', 'Collaboration', 'Code Management'];
+    if (name.includes('cloud computing'))
+      return [
+        'Cloud Computing',
+        'Cloud Services',
+        'Infrastructure',
+        'Scalability',
+      ];
+
+    return [
+      'Professional Development',
+      'Certification',
+      'Industry Skills',
+      'Technical Knowledge',
+    ];
   };
 
   const getCategoryIcon = (category) => {
@@ -424,28 +288,21 @@ const generateCertificatesData = () => {
   };
 
   return pdfFiles.map((file, index) => {
-    const certId = file.replace('Coursera ', '').replace('.pdf', '');
-    const courseInfo = certificateMapping[certId] || {
-      title: `Professional Certificate ${certId}`,
-      category: 'Developments',
-      skills: [
-        'Professional Development',
-        'Coursera Verified',
-        'Industry Skills',
-      ],
-    };
+    const title = file.replace('.pdf', '');
+    const category = getCertificateCategory(file);
+    const skills = getCertificateSkills(file);
 
     return {
       id: index + 1,
-      title: courseInfo.title,
+      title: title,
       issuer: 'Coursera',
       date: '2023-2024',
-      category: courseInfo.category,
-      pdfUrl: `/assets/COURSES/${file}`,
-      skills: courseInfo.skills,
-      certId: certId,
-      icon: getCategoryIcon(courseInfo.category),
-      colorGradient: getCategoryColor(courseInfo.category),
+      category: category,
+      pdfUrl: new URL(`../../assets/COURSES/${file}`, import.meta.url).href,
+      skills: skills,
+      certId: title.substring(0, 10), // Use first 10 chars as ID
+      icon: getCategoryIcon(category),
+      colorGradient: getCategoryColor(category),
     };
   });
 };
@@ -482,42 +339,56 @@ export default function Certificates({ onClose }) {
     return () => clearTimeout(timer);
   }, []);
 
-  const filteredCertificates = certificates.filter((cert) => {
-    const matchesCategory =
-      selectedCategory === 'All' || cert.category === selectedCategory;
-    return matchesCategory;
-  });
+  // Memoize filtered certificates to prevent unnecessary recalculations
+  const filteredCertificates = useMemo(() => {
+    return certificates.filter((cert) => {
+      const matchesCategory =
+        selectedCategory === 'All' || cert.category === selectedCategory;
+      return matchesCategory;
+    });
+  }, [selectedCategory]);
 
-  const openCertificate = (cert) => {
+  const openCertificate = useCallback((cert) => {
     setSelectedCert(cert);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const closeCertificate = () => {
+  const closeCertificate = useCallback(() => {
     setIsModalOpen(false);
     setTimeout(() => setSelectedCert(null), 300);
-  };
+  }, []);
 
-  const downloadCertificate = (cert) => {
+  const downloadCertificate = useCallback((cert) => {
     const link = document.createElement('a');
     link.href = cert.pdfUrl;
     link.download = `${cert.title.replace(/\s+/g, '_')}_Certificate.pdf`;
     link.click();
-  };
+  }, []);
 
-  const handleScroll = (e) => {
-    const scrollTop = e.target.scrollTop;
-    const scrollHeight = e.target.scrollHeight;
-    const clientHeight = e.target.clientHeight;
+  // Throttle scroll handler for better performance
+  const handleScroll = useCallback(
+    (() => {
+      let timeoutId;
+      return (e) => {
+        if (timeoutId) return;
+        timeoutId = setTimeout(() => {
+          const scrollTop = e.target.scrollTop;
+          const scrollHeight = e.target.scrollHeight;
+          const clientHeight = e.target.clientHeight;
 
-    setShowScrollTop(scrollTop > 300);
+          setShowScrollTop(scrollTop > 300);
 
-    // Calculate scroll progress
-    const progress = (scrollTop / (scrollHeight - clientHeight)) * 100;
-    setScrollProgress(Math.min(progress, 100));
-  };
+          // Calculate scroll progress
+          const progress = (scrollTop / (scrollHeight - clientHeight)) * 100;
+          setScrollProgress(Math.min(progress, 100));
+          timeoutId = null;
+        }, 16); // ~60fps
+      };
+    })(),
+    []
+  );
 
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     const scrollContainer = document.querySelector(
       '.certificates-scroll-container'
     );
@@ -527,7 +398,7 @@ export default function Certificates({ onClose }) {
         behavior: 'smooth',
       });
     }
-  };
+  }, []);
 
   return (
     <div
@@ -663,25 +534,17 @@ export default function Certificates({ onClose }) {
                     key={category}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
+                    transition={{ duration: 0.3, delay: 0.5 + index * 0.05 }}
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-6 py-2 rounded-full font-medium transition-all duration-300 ${
+                    className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
                       selectedCategory === category
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
                         : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white border border-gray-600/50'
                     }`}
                   >
-                    <motion.span
-                      className="flex items-center gap-2"
-                      animate={
-                        selectedCategory === category
-                          ? { scale: [1, 1.1, 1] }
-                          : {}
-                      }
-                      transition={{ duration: 0.3 }}
-                    >
+                    <span className="flex items-center gap-2">
                       {category !== 'All' && (
                         <span className="text-lg">
                           {category === 'Python' && '🐍'}
@@ -699,7 +562,7 @@ export default function Certificates({ onClose }) {
                         </span>
                       )}
                       {category}
-                    </motion.span>
+                    </span>
                   </motion.button>
                 ))}
               </motion.div>
@@ -745,12 +608,12 @@ export default function Certificates({ onClose }) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{
-                      duration: 0.4,
-                      delay: Math.min(index * 0.03, 0.3),
-                      layout: { duration: 0.3 },
+                      duration: 0.3,
+                      delay: Math.min(index * 0.02, 0.2),
+                      layout: { duration: 0.2 },
                     }}
-                    whileHover={{ y: -8, scale: 1.03 }}
-                    className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm border border-purple-500/20 rounded-xl overflow-hidden shadow-xl hover:shadow-purple-500/25 transition-all duration-300 cursor-pointer group"
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm border border-purple-500/20 rounded-xl overflow-hidden shadow-xl hover:shadow-purple-500/25 transition-all duration-200 cursor-pointer group"
                     onClick={() => openCertificate(cert)}
                   >
                     {/* Certificate Thumbnail */}
@@ -768,7 +631,7 @@ export default function Certificates({ onClose }) {
                       </div>
 
                       {/* Simple Hover Overlay */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center justify-center">
                         <div className="text-center">
                           <div className="text-3xl mb-1">👁️</div>
                           <p className="text-white text-sm font-medium">
@@ -1071,14 +934,10 @@ export default function Certificates({ onClose }) {
               </div>
               <div className="text-xs text-purple-200 mt-1">From Coursera</div>
               {selectedCategory !== 'All' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-lg mt-1"
-                >
+                <div className="text-lg mt-1">
                   {selectedCategory === 'Python' && '🐍'}
                   {selectedCategory === 'Network and Security' && '🔐'}
-                  {selectedCategory === 'Frontend and Backend' && '�'}
+                  {selectedCategory === 'Frontend and Backend' && '🌐'}
                   {selectedCategory === 'Go Programming' && '🚀'}
                   {selectedCategory === 'Html Css and Javascript' && '💻'}
                   {selectedCategory === 'Cybersecurity' && '🛡️'}
@@ -1088,88 +947,32 @@ export default function Certificates({ onClose }) {
                   {selectedCategory === 'Gen Ai' && '🤖'}
                   {selectedCategory === 'Software' && '📱'}
                   {selectedCategory === 'Developments' && '🔧'}
-                </motion.div>
+                </div>
               )}
             </div>
           </motion.div>
           {/* Animated Background Elements */}
           <div className="fixed inset-0 pointer-events-none overflow-hidden">
-            {[...Array(8)].map((_, i) => (
+            {[...Array(4)].map((_, i) => (
               <motion.div
                 key={i}
                 className="absolute w-2 h-2 bg-purple-400/10 rounded-full"
                 animate={{
-                  x: [0, Math.random() * window.innerWidth],
-                  y: [0, Math.random() * window.innerHeight],
+                  x: [0, Math.random() * 200],
+                  y: [0, Math.random() * 200],
                   scale: [0, 1, 0],
                 }}
                 transition={{
-                  duration: 10 + Math.random() * 10,
+                  duration: 8 + Math.random() * 4,
                   repeat: Infinity,
                   delay: i * 2,
+                  ease: 'linear',
                 }}
                 style={{
                   left: Math.random() * 100 + '%',
                   top: Math.random() * 100 + '%',
                 }}
               />
-            ))}
-
-            {/* Category Icons Floating */}
-            {categories.slice(1, 7).map((category, i) => (
-              <motion.div
-                key={category}
-                className="absolute text-3xl opacity-5"
-                animate={{
-                  x: [0, 50, -50, 0],
-                  y: [0, -30, 30, 0],
-                  rotate: [0, 10, -10, 0],
-                }}
-                transition={{
-                  duration: 15 + i * 2,
-                  repeat: Infinity,
-                  delay: i * 3,
-                }}
-                style={{
-                  left: Math.random() * 90 + '%',
-                  top: Math.random() * 80 + '%',
-                }}
-              >
-                {category === 'Python' && '🐍'}
-                {category === 'Network and Security' && '🔐'}
-                {category === 'Frontend and Backend' && '🌐'}
-                {category === 'Go Programming' && '🚀'}
-                {category === 'Html Css and Javascript' && '💻'}
-                {category === 'Cybersecurity' && '🛡️'}
-              </motion.div>
-            ))}
-            {/* More Category Icons */}
-            {categories.slice(7).map((category, i) => (
-              <motion.div
-                key={`extra-${category}`}
-                className="absolute text-2xl opacity-5"
-                animate={{
-                  x: [0, -40, 40, 0],
-                  y: [0, 25, -25, 0],
-                  rotate: [0, -5, 5, 0],
-                }}
-                transition={{
-                  duration: 12 + i * 1.5,
-                  repeat: Infinity,
-                  delay: (i + 6) * 2,
-                }}
-                style={{
-                  left: Math.random() * 85 + '%',
-                  top: Math.random() * 75 + '%',
-                }}
-              >
-                {category === 'Blockchain' && '⛓️'}
-                {category === 'C Programming' && '⚙️'}
-                {category === 'React' && '⚛️'}
-                {category === 'Gen Ai' && '🤖'}
-                {category === 'Software' && '📱'}
-                {category === 'Developments' && '🔧'}
-              </motion.div>
             ))}
           </div>
         </div>

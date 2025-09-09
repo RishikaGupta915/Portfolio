@@ -7,6 +7,7 @@ import snakeIcon from '../../assets/snake.png';
 import settingsIcon from '../../assets/settings.png';
 import paintIcon from '../../assets/paint.png';
 import certificatesIcon from '../../assets/certificate.png';
+import aiChatbotIcon from '../../assets/cat.png';
 
 export default function Desktop({
   wallpaper,
@@ -17,6 +18,7 @@ export default function Desktop({
   onOpenSnake,
   onOpenPaint,
   onOpenCertificates,
+  onOpenAIChatbot,  
 }) {
   return (
     <div
@@ -203,6 +205,38 @@ export default function Desktop({
           </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Certificates
+          </span>
+        </motion.div>
+
+        {/* AI Chatbot Icon */}
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onOpenAIChatbot}
+          className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
+        >
+          <img
+            src={aiChatbotIcon}
+            alt="Chatbot"
+            className="w-12 h-12 mb-1"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling;
+              if (fallback) {
+                fallback.style.display = 'flex';
+                fallback.style.alignItems = 'center';
+                fallback.style.justifyContent = 'center';
+              }
+            }}
+          />
+          <div
+            className="w-12 h-12 bg-purple-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1"
+            style={{ display: 'none' }}
+          >
+            🤖
+          </div>
+          <span className="text-white text-xs font-medium text-center drop-shadow-lg">
+            Chatbot
           </span>
         </motion.div>
       </div>
