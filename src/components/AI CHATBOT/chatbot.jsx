@@ -29,13 +29,23 @@ export default function AIBrowser({ onClose }) {
 
   const checkServerConnection = async () => {
     try {
-      const response = await fetch('http://localhost:5000/health');
+      const response = await fetch('http://localhost:5000/health', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
       if (response.ok) {
+        const data = await response.json();
+        console.log('Server health check:', data);
         setIsConnected(true);
       } else {
+        console.error('Server health check failed:', response.status);
         setIsConnected(false);
       }
     } catch (error) {
+      console.error('Server connection error:', error);
       setIsConnected(false);
     }
   };
@@ -59,7 +69,9 @@ export default function AIBrowser({ onClose }) {
 
       const res = await fetch('http://localhost:5000/api/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ question: currentQuestion }),
       });
 
@@ -71,17 +83,17 @@ export default function AIBrowser({ onClose }) {
         type: 'ai',
         content: data.answer || "Sorry, I couldn't process your request.",
         timestamp: new Date().toISOString(),
-        error: data.error,
+        error: data.error ? true : false,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
-      setIsConnected(true);
+      setIsConnected(true); // Connection successful
     } catch (error) {
       console.error('Error asking AI:', error);
       const errorMessage = {
         type: 'ai',
         content:
-          "Sorry, I'm having trouble connecting to the server. Please make sure the server is running on port 5000.",
+          "❌ Connection failed. Please make sure the server is running with 'npm run server' and try again.",
         timestamp: new Date().toISOString(),
         error: true,
       };

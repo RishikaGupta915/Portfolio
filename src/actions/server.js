@@ -1,173 +1,165 @@
 import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+import cors from 'cors';
 
-// Load environment variables
 dotenv.config();
-
-// Debug environment loading
-console.log('=== Environment Debug ===');
-console.log('HF_TOKEN exists:', !!process.env.HF_TOKEN);
-console.log(
-  'HF_TOKEN length:',
-  process.env.HF_TOKEN ? process.env.HF_TOKEN.length : 'undefined'
-);
-console.log(
-  'HF_TOKEN preview:',
-  process.env.HF_TOKEN
-    ? process.env.HF_TOKEN.substring(0, 15) + '...'
-    : 'undefined'
-);
-console.log(
-  'All env keys:',
-  Object.keys(process.env).filter((key) => key.includes('HF'))
-);
-console.log('=========================');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-// Middleware
-app.use(cors());
+// ✅ Enhanced CORS configuration
+app.use(
+  cors({
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173',
+    ],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+);
+
+// ✅ Middleware
 app.use(express.json());
 
-// Health check endpoint
+// ✅ Enhanced health check route
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'Server is running!',
+  const status = {
+    status: 'OK',
+    message: 'AI Chat Server is running 🚀',
     timestamp: new Date().toISOString(),
-  });
+    groqApiConfigured: !!process.env.GROQ_API_KEY,
+    port: PORT,
+  };
+  res.json(status);
 });
 
-// AI Chat endpoint
+// ✅ Enhanced AI Chat endpoint
 app.post('/api/ask', async (req, res) => {
   try {
     const { question } = req.body;
 
-    if (!question || question.trim() === '') {
+    // Validate input
+    if (!question || typeof question !== 'string' || !question.trim()) {
       return res.status(400).json({
-        error: 'Question is required',
-        answer: 'Please provide a question to get an answer.',
+        error: "Missing or invalid 'question'",
+        answer: 'Please provide a valid question.',
       });
     }
 
-    // Check if HuggingFace token is available
-    if (!process.env.HF_TOKEN) {
+    // Check API key
+    if (!process.env.GROQ_API_KEY) {
       return res.status(500).json({
-        error: 'HuggingFace token not configured',
+        error: 'Groq API key not configured',
         answer:
-          'AI service is not properly configured. Please check the server setup.',
+          'AI service is not properly configured. Please check server setup.',
       });
     }
 
-    console.log('Processing question:', question);
+    // Choose model (using currently supported Groq models)
+    const chosenModel = 'llama-3.1-8b-instant'; // Most stable current model
+    // Alternative options: 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768', 'deepseek-r1-distill-qwen-32b'
+
+    console.log(`Processing question: "${question.substring(0, 50)}..."`);
+    console.log(`Using model: ${chosenModel}`);
     console.log(
-      'Token length:',
-      process.env.HF_TOKEN ? process.env.HF_TOKEN.length : 'undefined'
-    );
-    console.log(
-      'Token starts with:',
-      process.env.HF_TOKEN
-        ? process.env.HF_TOKEN.substring(0, 10) + '...'
-        : 'undefined'
+      `API Key configured: ${process.env.GROQ_API_KEY ? 'Yes' : 'No'}`
     );
 
-    // Call HuggingFace API with GPT-2 (fallback option)
-    const response = await fetch(
-      'https://api-inference.huggingface.co/models/gpt2',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.HF_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputs: question,
-          parameters: {
-            max_length: 100,
-            temperature: 0.7,
-            do_sample: true,
-            pad_token_id: 50256,
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: chosenModel,
+        messages: [
+          {
+            role: 'system',
+            content:
+              "You are Rishika's assistant AI helping the users with any question they ask. Be helpful, friendly, and professional. Keep responses concise but informative.",
           },
-        }),
-      }
-    );
+          { role: 'user', content: question.trim() },
+        ],
+        max_tokens: 512,
+        temperature: 0.7,
+        top_p: 1,
+        stream: false,
+      }),
+    });
+
+    console.log(`Groq API response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('HuggingFace API error:', response.status, errorText);
+      console.error('Groq API error:', response.status, errorText);
 
-      // Handle specific error cases
-      if (response.status === 503) {
-        return res.json({
-          answer:
-            'The AI model is currently loading. Please try again in a few moments.',
-          error: 'Model loading',
-        });
+      let errorMessage =
+        "Sorry, I'm having trouble connecting to the AI service.";
+      if (response.status === 401) {
+        errorMessage =
+          'AI service authentication failed. Please check API key.';
+      } else if (response.status === 429) {
+        errorMessage = 'AI service is busy. Please try again in a moment.';
+      } else if (response.status === 500) {
+        errorMessage = 'AI service is temporarily unavailable.';
       }
 
-      return res.status(500).json({
-        error: 'AI service error',
-        answer:
-          'Sorry, I encountered an error while processing your question. Please try again later.',
+      return res.status(200).json({
+        error: `API Error: ${response.status}`,
+        answer: errorMessage,
       });
     }
 
     const data = await response.json();
-    console.log('HuggingFace response:', data);
+    console.log('Groq API response received successfully');
 
-    // Extract answer from response
-    let answer = 'Sorry, I could not generate a response.';
-
-    if (Array.isArray(data) && data.length > 0) {
-      if (data[0].generated_text) {
-        // For DialoGPT, extract the response after the input
-        const fullText = data[0].generated_text;
-        const responseText = fullText.substring(question.length).trim();
-        answer =
-          responseText ||
-          'I understand your question, but I need more context to provide a helpful answer.';
-      } else if (typeof data[0] === 'string') {
-        answer = data[0];
-      }
-    } else if (data.generated_text) {
-      answer = data.generated_text;
-    } else if (typeof data === 'string') {
-      answer = data;
-    }
-
-    // Final cleanup
-    answer = answer.trim();
-
-    if (answer === '' || answer.length < 3) {
-      answer =
-        'I understand your question. Could you please rephrase it or provide more details?';
-    }
+    const answer =
+      data.choices?.[0]?.message?.content?.trim() ||
+      "I couldn't generate a response. Please try again.";
 
     res.json({
       answer,
       timestamp: new Date().toISOString(),
-      question: question,
+      model: chosenModel,
+      success: true,
     });
-  } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(200).json({
+      error: 'Server error',
       answer: 'Sorry, something went wrong on my end. Please try again later.',
       timestamp: new Date().toISOString(),
     });
   }
 });
 
-// Start server
+// ✅ Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    answer: 'Something went wrong. Please try again.',
+  });
+});
+
+// ✅ Start server with enhanced logging
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log(`🔍 Health check: http://localhost:${PORT}/health`);
-  console.log(`🤖 AI Chat endpoint: http://localhost:${PORT}/api/ask`);
+  console.log(`🚀 AI Chat Server running at http://localhost:${PORT}`);
+  console.log(`🔍 Health check → http://localhost:${PORT}/health`);
+  console.log(`🤖 AI Chat → http://localhost:${PORT}/api/ask`);
   console.log(
-    `🔑 HuggingFace token configured: ${process.env.HF_TOKEN ? 'Yes' : 'No'}`
+    `🔑 Groq API Key: ${
+      process.env.GROQ_API_KEY ? '✅ Configured' : '❌ Missing'
+    }`
   );
+  console.log(`📡 CORS enabled for frontend development`);
 });
 
 export default app;
