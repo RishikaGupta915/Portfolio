@@ -10,6 +10,7 @@ import SnakeGame from './components/Games/Snake/snake';
 import PaintApp from './components/Games/paint/paint';
 import Certificates from './components/About/certificates';
 import AIBrowser from './components/AI CHATBOT/chatbot';
+import AboutMe from './components/About/about';
 
 import defaultWallpaper from './assets/default.gif';
 import wallpaper1 from './assets/wall1.jpg';
@@ -30,6 +31,7 @@ function App() {
   const [showPaint, setShowPaint] = useState(false);
   const [showCertificates, setShowCertificates] = useState(false);
   const [showAIChatbot, setShowAIChatbot] = useState(false);
+  const [showAboutMe, setShowAboutMe] = useState(false);
 
   const wallpapers = [
     defaultWallpaper,
@@ -63,6 +65,7 @@ function App() {
             onOpenPaint={() => setShowPaint(true)}
             onOpenCertificates={() => setShowCertificates(true)}
             onOpenAIChatbot={() => setShowAIChatbot(true)}
+            onOpenAboutMe={() => setShowAboutMe(true)}
           />
           {showSettings && (
             <Settings
@@ -86,6 +89,7 @@ function App() {
           {showAIChatbot && (
             <AIBrowser onClose={() => setShowAIChatbot(false)} />
           )}
+          {showAboutMe && <AboutMe onClose={() => setShowAboutMe(false)} />}
           <Taskbar apps={apps} />
         </>
       )}
