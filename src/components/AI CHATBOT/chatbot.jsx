@@ -29,7 +29,7 @@ export default function AIBrowser({ onClose }) {
 
   const checkServerConnection = async () => {
     try {
-      const response = await fetch('http://localhost:5000/health', {
+      const response = await fetch('/api/health', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +67,7 @@ export default function AIBrowser({ onClose }) {
     try {
       console.log('Sending question to server:', currentQuestion);
 
-      const res = await fetch('http://localhost:5000/api/ask', {
+      const res = await fetch('/api/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
