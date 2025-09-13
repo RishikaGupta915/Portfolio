@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import BootSequence from './components/BootStrap/BootSequence';
-import Desktop from './components/Desktop/desktop';
+import Desktop from './components/Desktop/Desktop';
 import Settings from './components/Desktop/Settings';
 import Taskbar from './components/Taskbar/Taskbar';
 import SudokuApp from './components/Games/Sudoku/Sudoku';
@@ -21,7 +21,7 @@ import ticTacToeIcon from './assets/tictactoe.png';
 import pongIcon from './assets/pong.png';
 import snakeIcon from './assets/snake.png';
 import paintIcon from './assets/paint.png';
-import contactIcon from './assets/contact.png'; 
+import contactIcon from './assets/contact.png';
 
 import defaultWallpaper from './assets/default.gif';
 import wallpaper1 from './assets/wall1.jpg';
@@ -53,7 +53,6 @@ function App() {
     wallpaper4,
   ];
 
-  
   const allApps = [
     {
       id: 'about-me',
@@ -127,7 +126,6 @@ function App() {
     },
   ];
 
-  
   const taskbarApps = [
     {
       id: 'about-me',
