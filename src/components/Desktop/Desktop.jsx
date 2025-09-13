@@ -9,6 +9,7 @@ import paintIcon from '../../assets/paint.png';
 import certificatesIcon from '../../assets/certificate.png';
 import aiChatbotIcon from '../../assets/cat.png';
 import aboutMeIcon from '../../assets/me.png';
+import contactIcon from '../../assets/contact.png'; // Using settings icon temporarily for contact
 
 export default function Desktop({
   wallpaper,
@@ -19,8 +20,9 @@ export default function Desktop({
   onOpenSnake,
   onOpenPaint,
   onOpenCertificates,
-  onOpenAIChatbot,  
+  onOpenAIChatbot,
   onOpenAboutMe,
+  onOpenContact,
 }) {
   return (
     <div
@@ -46,9 +48,6 @@ export default function Desktop({
               if (fallback) fallback.classList.remove('hidden');
             }}
           />
-          <div className="w-12 h-12 bg-blue-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
-            S
-          </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Sudoku
           </span>
@@ -71,9 +70,6 @@ export default function Desktop({
               if (fallback) fallback.classList.remove('hidden');
             }}
           />
-          <div className="w-12 h-12 bg-red-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
-            ⚡
-          </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Tic Tac Toe
           </span>
@@ -96,9 +92,6 @@ export default function Desktop({
               if (fallback) fallback.classList.remove('hidden');
             }}
           />
-          <div className="w-12 h-12 bg-green-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
-            P
-          </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Pong
           </span>
@@ -144,9 +137,6 @@ export default function Desktop({
               if (fallback) fallback.classList.remove('hidden');
             }}
           />
-          <div className="w-12 h-12 bg-gray-600 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
-            ⚙️
-          </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Settings
           </span>
@@ -169,9 +159,6 @@ export default function Desktop({
               if (fallback) fallback.classList.remove('hidden');
             }}
           />
-          <div className="w-12 h-12 bg-blue-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1 hidden">
-            S
-          </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Paint
           </span>
@@ -199,12 +186,6 @@ export default function Desktop({
               }
             }}
           />
-          <div
-            className="w-12 h-12 bg-purple-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1"
-            style={{ display: 'none' }}
-          >
-            📜
-          </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Certificates
           </span>
@@ -231,12 +212,6 @@ export default function Desktop({
               }
             }}
           />
-          <div
-            className="w-12 h-12 bg-purple-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1"
-            style={{ display: 'none' }}
-          >
-            🤖
-          </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Chatbot
           </span>
@@ -263,14 +238,34 @@ export default function Desktop({
               }
             }}
           />
-          <div
-            className="w-12 h-12 bg-purple-500 rounded-lg items-center justify-center text-white text-xl font-bold mb-1"
-            style={{ display: 'none' }}
-          >
-            🤖
-          </div>
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             About Me
+          </span>
+        </motion.div>
+
+        {/*Contact Icon*/}
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onOpenContact}
+          className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
+        >
+          <img
+            src={contactIcon}
+            alt="Contact"
+            className="w-12 h-12 mb-1"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling;
+              if (fallback) {
+                fallback.style.display = 'flex';
+                fallback.style.alignItems = 'center';
+                fallback.style.justifyContent = 'center';
+              }
+            }}
+          />
+          <span className="text-white text-xs font-medium text-center drop-shadow-lg">
+            Contact
           </span>
         </motion.div>
       </div>

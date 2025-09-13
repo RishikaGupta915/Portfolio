@@ -11,7 +11,7 @@ import {
   MapPin,
 } from 'lucide-react';
 
-function Taskbar({ apps }) {
+function Taskbar({ apps, allApps }) {
   const [time, setTime] = useState(new Date());
   const [weather, setWeather] = useState({
     temp: 28,
@@ -22,14 +22,15 @@ function Taskbar({ apps }) {
   });
   const [showWeatherDetails, setShowWeatherDetails] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [search, setSearch] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [filteredApps, setFilteredApps] = useState([]);
 
-  // Update clock every second
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Close popups when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -43,6 +44,12 @@ function Taskbar({ apps }) {
         !event.target.closest('.calendar-button')
       ) {
         setShowCalendar(false);
+      }
+      if (
+        !event.target.closest('.search-popup') &&
+        !event.target.closest('.search-input')
+      ) {
+        setShowSearchResults(false);
       }
     };
 
@@ -66,7 +73,6 @@ function Taskbar({ apps }) {
         })
       )
       .catch(() => {
-        // Fallback data if API fails
         setWeather({
           temp: 28,
           condition: 'Sunny',
@@ -77,7 +83,46 @@ function Taskbar({ apps }) {
       });
   }, []);
 
-  // Generate calendar days
+  // Search functionality - search through ALL apps, not just taskbar apps
+  useEffect(() => {
+    if (search.trim() && allApps && allApps.length > 0) {
+      const filtered = allApps.filter(
+        (app) =>
+          app.name.toLowerCase().includes(search.toLowerCase()) ||
+          app.category.toLowerCase().includes(search.toLowerCase())
+      );
+      setFilteredApps(filtered);
+      setShowSearchResults(true);
+    } else {
+      setFilteredApps([]);
+      setShowSearchResults(false);
+    }
+  }, [search, allApps]);
+
+  const handleSearchSelect = (app) => {
+    app.onClick();
+    setSearch('');
+    setShowSearchResults(false);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter' && filteredApps.length > 0) {
+      handleSearchSelect(filteredApps[0]);
+    } else if (e.key === 'Escape') {
+      setSearch('');
+      setShowSearchResults(false);
+      e.target.blur();
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+
+    // Debug logging
+    console.log('Search value:', value);
+    console.log('Available allApps:', allApps);
+  };
   const generateCalendar = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -88,12 +133,10 @@ function Taskbar({ apps }) {
 
     const days = [];
 
-    // Add empty cells for days before the month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
 
-    // Add all days of the month
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(i);
     }
@@ -120,19 +163,99 @@ function Taskbar({ apps }) {
 
   return (
     <div className="fixed bottom-0 left-0 w-full h-12 bg-black/60 backdrop-blur-md flex items-center justify-between px-4 border-t border-white/10">
-      {/* Start Button */}
-      <button className="p-2 rounded hover:bg-white/20 transition">
-        <img src="/icons/start.png" alt="Start" className="h-6 w-6" />
-      </button>
+      {/* Search Bar */}
+      <div className="flex items-center space-x-2 min-w-[200px] relative">
+        <div className="relative flex-1 search-popup">
+          <input
+            type="text"
+            placeholder="Search apps..."
+            value={search}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
+            onFocus={() => {
+              if (search.trim() && filteredApps.length > 0) {
+                setShowSearchResults(true);
+              }
+            }}
+            className="search-input w-full h-8 px-3 pl-8 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-white/60 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
+          />
+          <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-white/60">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          {/* Search Results Dropdown */}
+          {showSearchResults && filteredApps.length > 0 && (
+            <div className="absolute bottom-full mb-2 left-0 w-full bg-black/95 backdrop-blur-md border border-white/30 rounded-lg shadow-xl z-[9999] overflow-hidden max-h-48 overflow-y-auto">
+              {filteredApps.map((app) => (
+                <button
+                  key={app.id}
+                  onClick={() => handleSearchSelect(app)}
+                  className="w-full flex items-center space-x-3 px-3 py-3 hover:bg-white/20 transition-colors text-left border-b border-white/10 last:border-b-0"
+                >
+                  <img
+                    src={app.icon}
+                    alt={app.name}
+                    className="w-5 h-5 object-contain flex-shrink-0"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-white text-sm font-medium">
+                      {app.name}
+                    </span>
+                    <span className="text-white/60 text-xs capitalize">
+                      {app.category}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* No Results Message */}
+          {showSearchResults && search.trim() && filteredApps.length === 0 && (
+            <div className="absolute bottom-full mb-2 left-0 w-full bg-black/95 backdrop-blur-md border border-white/30 rounded-lg shadow-xl z-[9999] px-3 py-3">
+              <span className="text-white/60 text-sm">
+                No apps found for "{search}"
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* App Icons */}
       <div className="flex space-x-4">
-        {apps.map((app, index) => (
+        {apps.map((app) => (
           <button
-            key={index}
-            className="p-2 hover:bg-white/20 rounded transition"
+            key={app.id}
+            onClick={app.onClick}
+            className="flex flex-col items-center justify-center w-10 h-10 rounded-lg hover:bg-white/20 transition-colors group"
+            title={app.name}
           >
-            <img src={app.icon} alt={app.name} className="h-6 w-6" />
+            <img
+              src={app.icon}
+              alt={app.name}
+              className="w-6 h-6 object-contain group-hover:scale-110 transition-transform"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                console.warn(`Failed to load icon for ${app.name}`);
+              }}
+            />
           </button>
         ))}
       </div>

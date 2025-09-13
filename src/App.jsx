@@ -11,6 +11,17 @@ import PaintApp from './components/Games/paint/paint';
 import Certificates from './components/About/certificates';
 import AIBrowser from './components/AI CHATBOT/chatbot';
 import AboutMe from './components/About/about';
+import Contact from './components/About/contact';
+import aboutMeIcon from './assets/me.png';
+import aiChatbotIcon from './assets/cat.png';
+import certificatesIcon from './assets/certificate.png';
+import settingsIcon from './assets/settings.png';
+import sudokuIcon from './assets/sudoku.png';
+import ticTacToeIcon from './assets/tictactoe.png';
+import pongIcon from './assets/pong.png';
+import snakeIcon from './assets/snake.png';
+import paintIcon from './assets/paint.png';
+import contactIcon from './assets/contact.png'; 
 
 import defaultWallpaper from './assets/default.gif';
 import wallpaper1 from './assets/wall1.jpg';
@@ -32,6 +43,7 @@ function App() {
   const [showCertificates, setShowCertificates] = useState(false);
   const [showAIChatbot, setShowAIChatbot] = useState(false);
   const [showAboutMe, setShowAboutMe] = useState(false);
+  const [showContact, setShowContact] = useState(false);
 
   const wallpapers = [
     defaultWallpaper,
@@ -41,12 +53,112 @@ function App() {
     wallpaper4,
   ];
 
-  // Sample apps for the taskbar
-  const apps = [
-    { name: 'Browser', icon: '/icons/browser.png' },
-    { name: 'Terminal', icon: '/icons/terminal.png' },
-    { name: 'VS Code', icon: '/icons/vscode.png' },
-    { name: 'Portfolio', icon: '/icons/portfolio.png' },
+  
+  const allApps = [
+    {
+      id: 'about-me',
+      name: 'About Me',
+      icon: aboutMeIcon,
+      onClick: () => setShowAboutMe(true),
+      category: 'personal',
+    },
+    {
+      id: 'chatbot',
+      name: 'AI Chatbot',
+      icon: aiChatbotIcon,
+      onClick: () => setShowAIChatbot(true),
+      category: 'ai',
+    },
+    {
+      id: 'certificates',
+      name: 'Certificates',
+      icon: certificatesIcon,
+      onClick: () => setShowCertificates(true),
+      category: 'personal',
+    },
+    {
+      id: 'contact',
+      name: 'Contact',
+      icon: contactIcon,
+      onClick: () => setShowContact(true),
+      category: 'personal',
+    },
+    {
+      id: 'settings',
+      name: 'Settings',
+      icon: settingsIcon,
+      onClick: () => setShowSettings(true),
+      category: 'system',
+    },
+    {
+      id: 'sudoku',
+      name: 'Sudoku',
+      icon: sudokuIcon,
+      onClick: () => setShowSudoku(true),
+      category: 'games',
+    },
+    {
+      id: 'tictactoe',
+      name: 'Tic Tac Toe',
+      icon: ticTacToeIcon,
+      onClick: () => setShowTicTacToe(true),
+      category: 'games',
+    },
+    {
+      id: 'pong',
+      name: 'Pong',
+      icon: pongIcon,
+      onClick: () => setShowPong(true),
+      category: 'games',
+    },
+    {
+      id: 'snake',
+      name: 'Snake',
+      icon: snakeIcon,
+      onClick: () => setShowSnake(true),
+      category: 'games',
+    },
+    {
+      id: 'paint',
+      name: 'Paint',
+      icon: paintIcon,
+      onClick: () => setShowPaint(true),
+      category: 'creative',
+    },
+  ];
+
+  
+  const taskbarApps = [
+    {
+      id: 'about-me',
+      name: 'About Me',
+      icon: aboutMeIcon,
+      onClick: () => setShowAboutMe(true),
+    },
+    {
+      id: 'chatbot',
+      name: 'AI Chatbot',
+      icon: aiChatbotIcon,
+      onClick: () => setShowAIChatbot(true),
+    },
+    {
+      id: 'certificates',
+      name: 'Certificates',
+      icon: certificatesIcon,
+      onClick: () => setShowCertificates(true),
+    },
+    {
+      id: 'contact',
+      name: 'Contact',
+      icon: contactIcon,
+      onClick: () => setShowContact(true),
+    },
+    {
+      id: 'settings',
+      name: 'Settings',
+      icon: settingsIcon,
+      onClick: () => setShowSettings(true),
+    },
   ];
 
   return (
@@ -66,6 +178,7 @@ function App() {
             onOpenCertificates={() => setShowCertificates(true)}
             onOpenAIChatbot={() => setShowAIChatbot(true)}
             onOpenAboutMe={() => setShowAboutMe(true)}
+            onOpenContact={() => setShowContact(true)}
           />
           {showSettings && (
             <Settings
@@ -90,7 +203,8 @@ function App() {
             <AIBrowser onClose={() => setShowAIChatbot(false)} />
           )}
           {showAboutMe && <AboutMe onClose={() => setShowAboutMe(false)} />}
-          <Taskbar apps={apps} />
+          {showContact && <Contact onClose={() => setShowContact(false)} />}
+          <Taskbar apps={taskbarApps} allApps={allApps} />
         </>
       )}
     </div>

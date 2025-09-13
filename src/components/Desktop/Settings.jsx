@@ -1,6 +1,22 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import {
+  X,
+  Settings2,
+  Palette,
+  Monitor,
+  Type,
+  MousePointer,
+  Upload,
+} from 'lucide-react';
 
-export default function Settings({ wallpapers, setWallpaper, setTextSize, setCursor, onClose }) {
+export default function Settings({
+  wallpapers,
+  setWallpaper,
+  setTextSize,
+  setCursor,
+  onClose,
+}) {
   const [customWallpaper, setCustomWallpaper] = useState(null);
 
   const handleFileUpload = (e) => {
@@ -9,83 +25,175 @@ export default function Settings({ wallpapers, setWallpaper, setTextSize, setCur
   };
 
   return (
-    <div className="absolute inset-0 bg-black/40 backdrop-blur-md flex justify-center items-center">
-      <div className="bg-white/90 rounded-2xl shadow-2xl p-8 w-11/12 max-w-2xl space-y-8">
-        <h2 className="text-2xl font-bold text-gray-800">⚙ Settings</h2>
-
-        {/* Personalization */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-gray-700">🎨 Personalization</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {wallpapers.map((wp, i) => (
-              <img
-                key={i}
-                src={wp}
-                onClick={() => setWallpaper(wp)}
-                className="h-24 w-full object-cover rounded-xl cursor-pointer transition-transform duration-200 hover:scale-105 hover:ring-4 ring-indigo-500"
-              />
-            ))}
-          </div>
-          <div className="mt-3">
-            <label className="block text-gray-600 mb-1">Upload custom wallpaper:</label>
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={handleFileUpload}
-              className="text-sm text-gray-700"
-            />
-            {customWallpaper && (
-              <button
-                onClick={() => setWallpaper(customWallpaper)}
-                className="mt-3 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl shadow"
-              >
-                Set as Wallpaper
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Accessibility */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-gray-700">🧩 Accessibility</h3>
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <label className="mr-3 font-medium text-gray-700">Text Size:</label>
-              <select
-                onChange={(e) => setTextSize(e.target.value)}
-                className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400"
-                defaultValue="text-base"
-              >
-                <option value="text-sm">Small</option>
-                <option value="text-base">Medium</option>
-                <option value="text-lg">Large</option>
-              </select>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 pb-20"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+        className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 max-w-4xl w-full max-h-[calc(100vh-8rem)] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <Settings2 className="w-6 h-6 text-blue-400" />
             </div>
-            <div className="flex items-center">
-              <label className="mr-3 font-medium text-gray-700">Cursor:</label>
-              <select
-                onChange={(e) => setCursor(e.target.value)}
-                className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400"
-              >
-                <option value="cursor-default">Default</option>
-                <option value="cursor-pointer">Pointer</option>
-                <option value="cursor-crosshair">Crosshair</option>
-                <option value="cursor-wait">Wait</option>
-              </select>
-            </div>
+            <h2 className="text-2xl font-bold text-white">Settings</h2>
           </div>
-        </div>
-
-        {/* Close */}
-        <div className="pt-4 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-red-500 hover:bg-red-600 transition-colors text-white font-semibold rounded-xl shadow-md"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors"
           >
-            Close
+            <X className="w-5 h-5 text-white" />
           </button>
         </div>
-      </div>
-    </div>
+
+        <div className="space-y-8">
+          {/* Personalization */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Palette className="w-5 h-5 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">
+                Personalization
+              </h3>
+            </div>
+
+            {/* Wallpapers */}
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+              <div className="flex items-center space-x-2 mb-4">
+                <Monitor className="w-4 h-4 text-white/60" />
+                <span className="text-white/80 font-medium">Wallpapers</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {wallpapers.map((wp, i) => (
+                  <motion.img
+                    key={i}
+                    src={wp}
+                    onClick={() => setWallpaper(wp)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="h-24 w-full object-cover rounded-xl cursor-pointer border-2 border-transparent hover:border-blue-400/50 transition-all duration-200"
+                  />
+                ))}
+              </div>
+
+              {/* Custom Upload */}
+              <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Upload className="w-4 h-4 text-white/60" />
+                  <label className="text-white/80 font-medium">
+                    Upload Custom Wallpaper
+                  </label>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="w-full text-sm text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-500/20 file:text-blue-400 hover:file:bg-blue-500/30 file:cursor-pointer"
+                />
+                {customWallpaper && (
+                  <motion.button
+                    onClick={() => setWallpaper(customWallpaper)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="mt-4 w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200"
+                  >
+                    Set as Wallpaper
+                  </motion.button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Accessibility */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <Type className="w-5 h-5 text-green-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">
+                Accessibility
+              </h3>
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10 space-y-6">
+              {/* Text Size */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Type className="w-4 h-4 text-white/60" />
+                  <span className="text-white/80 font-medium">Text Size</span>
+                </div>
+                <select
+                  onChange={(e) => setTextSize(e.target.value)}
+                  className="bg-white/10 border border-white/20 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400/50 focus:bg-white/15"
+                  defaultValue="text-base"
+                >
+                  <option value="text-sm" className="bg-gray-800">
+                    Small
+                  </option>
+                  <option value="text-base" className="bg-gray-800">
+                    Medium
+                  </option>
+                  <option value="text-lg" className="bg-gray-800">
+                    Large
+                  </option>
+                </select>
+              </div>
+
+              {/* Cursor Style */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <MousePointer className="w-4 h-4 text-white/60" />
+                  <span className="text-white/80 font-medium">
+                    Cursor Style
+                  </span>
+                </div>
+                <select
+                  onChange={(e) => setCursor(e.target.value)}
+                  className="bg-white/10 border border-white/20 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400/50 focus:bg-white/15"
+                >
+                  <option value="cursor-default" className="bg-gray-800">
+                    Default
+                  </option>
+                  <option value="cursor-pointer" className="bg-gray-800">
+                    Pointer
+                  </option>
+                  <option value="cursor-crosshair" className="bg-gray-800">
+                    Crosshair
+                  </option>
+                  <option value="cursor-wait" className="bg-gray-800">
+                    Wait
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="pt-6 border-t border-white/10">
+            <motion.button
+              onClick={onClose}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-3 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg"
+            >
+              Close Settings
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
