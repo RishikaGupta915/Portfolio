@@ -3,7 +3,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function AIBrowser({ onClose }) {
-  const API_BASE = import.meta.env.VITE_API_BASE || '';
+  const API_BASE =
+  import.meta.env.VITE_API_BASE ||
+  (process.env.NODE_ENV === "production" ? "" : "http://localhost:3000");
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState([
     {
@@ -29,15 +31,15 @@ export default function AIBrowser({ onClose }) {
     checkServerConnection();
   }, []);
 
-  const checkServerConnection = async () => {
-    try {
-      console.log('Attempting to connect to /api/health...');
-      const response = await fetch(`${API_BASE}/health`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+const checkServerConnection = async () => {
+  try {
+    console.log('Attempting to connect to /api/health...');
+    const response = await fetch(`/api/health`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
@@ -88,7 +90,7 @@ export default function AIBrowser({ onClose }) {
     try {
       console.log('Sending question to API:', currentQuestion);
 
-      const res = await fetch(`${API_BASE}/api/ask`, {
+      const res = await fetch(`/api/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
