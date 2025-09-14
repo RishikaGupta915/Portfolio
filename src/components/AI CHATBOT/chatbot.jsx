@@ -187,13 +187,6 @@ const checkServerConnection = async () => {
               🗑️
             </button>
             <button
-              onClick={checkServerConnection}
-              className="text-gray-400 hover:text-white transition-colors px-3 py-1 rounded hover:bg-gray-700/50"
-              title="Check connection"
-            >
-              🔄 Test
-            </button>
-            <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition-colors text-xl font-bold w-8 h-8 flex items-center justify-center rounded hover:bg-gray-700/50"
             >

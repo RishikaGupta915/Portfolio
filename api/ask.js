@@ -1,27 +1,32 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { question } = req.body;
 
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "deepseek-r1-distill-llama-70b",
-        messages: [{ role: "user", content: question }],
-      }),
-    });
+    const groqRes = await fetch(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'deepseek-r1-distill-llama-70b',
+          messages: [{ role: 'user', content: question }],
+        }),
+      }
+    );
 
     const data = await groqRes.json();
-    res.status(200).json({ answer: data.choices?.[0]?.message?.content });
+    const raw = data.choices?.[0]?.message?.content || '';
+    const clean = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    return res.status(200).json({ answer: clean });
   } catch (error) {
-    console.error("API error:", error);
-    res.status(500).json({ error: "AI request failed" });
+    console.error('API error:', error);
+    return res.status(500).json({ error: 'AI request failed' });
   }
 }
