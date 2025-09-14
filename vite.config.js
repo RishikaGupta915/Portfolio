@@ -9,5 +9,9 @@ export default defineConfig({
     fs: {
       allow: ['..'],
     },
+    proxy: {
+      '/api': 'http://localhost:5000',
+      '/health': 'http://localhost:5000',
+    },
   },
 });

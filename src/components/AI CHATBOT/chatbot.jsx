@@ -1,7 +1,9 @@
+'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function AIBrowser({ onClose }) {
+  const API_BASE = import.meta.env.VITE_API_BASE || '';
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState([
     {
@@ -29,23 +31,42 @@ export default function AIBrowser({ onClose }) {
 
   const checkServerConnection = async () => {
     try {
-      const response = await fetch('/api/health', {
+      console.log('Attempting to connect to /api/health...');
+      const response = await fetch(`${API_BASE}/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      console.log(
+        'Response content-type:',
+        response.headers.get('content-type')
+      );
+
       if (response.ok) {
-        const data = await response.json();
-        console.log('Server health check:', data);
-        setIsConnected(true);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          console.log('API health check success:', data);
+          setIsConnected(true);
+        } else {
+          const text = await response.text();
+          console.error(
+            'API returned non-JSON response:',
+            text.substring(0, 200)
+          );
+          setIsConnected(false);
+        }
       } else {
-        console.error('Server health check failed:', response.status);
+        const errorText = await response.text();
+        console.error('API health check failed:', response.status, errorText);
         setIsConnected(false);
       }
     } catch (error) {
-      console.error('Server connection error:', error);
+      console.error('API connection error details:', error);
       setIsConnected(false);
     }
   };
@@ -65,9 +86,9 @@ export default function AIBrowser({ onClose }) {
     setQuestion('');
 
     try {
-      console.log('Sending question to server:', currentQuestion);
+      console.log('Sending question to API:', currentQuestion);
 
-      const res = await fetch('/api/ask', {
+      const res = await fetch(`${API_BASE}/api/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,9 +96,9 @@ export default function AIBrowser({ onClose }) {
         body: JSON.stringify({ question: currentQuestion }),
       });
 
-      console.log('Server response status:', res.status);
+      console.log('API response status:', res.status);
       const data = await res.json();
-      console.log('Server response data:', data);
+      console.log('API response data:', data);
 
       const aiMessage = {
         type: 'ai',
@@ -93,7 +114,7 @@ export default function AIBrowser({ onClose }) {
       const errorMessage = {
         type: 'ai',
         content:
-          "❌ Connection failed. Please make sure the server is running with 'npm run server' and try again.",
+          "❌ Connection failed. Please make sure you're running 'vercel dev' and try again.",
         timestamp: new Date().toISOString(),
         error: true,
       };
@@ -168,7 +189,7 @@ export default function AIBrowser({ onClose }) {
               className="text-gray-400 hover:text-white transition-colors px-3 py-1 rounded hover:bg-gray-700/50"
               title="Check connection"
             >
-              🔄
+              🔄 Test
             </button>
             <button
               onClick={onClose}
@@ -282,8 +303,7 @@ export default function AIBrowser({ onClose }) {
               <div className="inline-flex items-center space-x-2 bg-red-900/50 text-red-200 px-4 py-2 rounded-lg border border-red-500/30">
                 <span>⚠️</span>
                 <span className="text-sm">
-                  Server not connected. Please start the server with: npm run
-                  server
+                  API not connected. Please run: vercel dev
                 </span>
               </div>
             </div>

@@ -8,13 +8,17 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node src/actions/server.js",
+    "server": "node api/server.js",
+    "start": "node api/server.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\""
   },
   "dependencies": {
+    "@ai-sdk/groq": "^2.0.19",
+    "ai": "^5.0.44",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "groq-sdk": "^0.32.0",
     "lucide": "^0.541.0",
     "lucide-react": "^0.541.0",
     "motion": "^12.23.12",
