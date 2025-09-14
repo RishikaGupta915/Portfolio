@@ -8,8 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node api/server.js",
-    "start": "node api/server.js",
+    "server": "node src/actions/server.js",
+    "start": "node src/actions/server.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\""
   },
   "dependencies": {
