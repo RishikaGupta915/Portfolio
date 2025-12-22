@@ -10,7 +10,7 @@ function BootSequence({ onComplete }) {
       setBootProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressInterval);
-          setTimeout(() => setIsComplete(true), 2000); // Stay longer before showing completion
+          setTimeout(() => setIsComplete(true), 2000); 
           return 100;
         }
         return prev + 2;
@@ -21,7 +21,6 @@ function BootSequence({ onComplete }) {
 
   useEffect(() => {
     if (isComplete && onComplete) {
-      // Show completion message for 10 seconds, then call onComplete
       const timer = setTimeout(() => {
         onComplete();
       }, 10000);

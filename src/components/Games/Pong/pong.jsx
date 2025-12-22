@@ -2,10 +2,22 @@ import React, { useRef, useEffect, useState } from 'react';
 
 export default function PongGame({ onClose }) {
   const canvasRef = useRef(null);
+  const canvasWrapRef = useRef(null);
   const modalRef = useRef(null);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [canvasCssSize, setCanvasCssSize] = useState({ w: 480, h: 320 });
+
+  const BASE_W = 480;
+  const BASE_H = 320;
+
+  const renderScaleRef = useRef({ sx: 1, sy: 1 });
+  const rafRef = useRef(0);
+
+  const paddleXRef = useRef((BASE_W - 100) / 2);
+  const ballRef = useRef({ x: BASE_W / 2, y: BASE_H - 30, dx: 2, dy: -2 });
+  const pressedRef = useRef({ left: false, right: false });
 
   // Dragging states
   const [isDragging, setIsDragging] = useState(false);
@@ -18,6 +30,54 @@ export default function PongGame({ onClose }) {
     setGameStarted(true);
     playSound(600, 100); // Game start sound
   };
+
+  const updateCanvasSize = () => {
+    const canvas = canvasRef.current;
+    const wrap = canvasWrapRef.current;
+    if (!canvas || !wrap) return;
+
+    const wrapWidth = wrap.clientWidth;
+    const maxHeight = Math.max(180, Math.floor(window.innerHeight * 0.45));
+    const aspect = BASE_H / BASE_W;
+
+    let cssW = wrapWidth;
+    let cssH = Math.floor(wrapWidth * aspect);
+    if (cssH > maxHeight) {
+      cssH = maxHeight;
+      cssW = Math.floor(cssH / aspect);
+    }
+
+    // Keep sane minimums.
+    cssW = Math.max(240, Math.floor(cssW));
+    cssH = Math.max(160, Math.floor(cssH));
+
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(cssW * dpr);
+    canvas.height = Math.floor(cssH * dpr);
+    renderScaleRef.current = {
+      sx: canvas.width / BASE_W,
+      sy: canvas.height / BASE_H,
+    };
+
+    setCanvasCssSize({ w: cssW, h: cssH });
+  };
+
+  useEffect(() => {
+    updateCanvasSize();
+    const wrap = canvasWrapRef.current;
+    if (!wrap) return;
+
+    const ro = new ResizeObserver(() => updateCanvasSize());
+    ro.observe(wrap);
+
+    const onWinResize = () => updateCanvasSize();
+    window.addEventListener('resize', onWinResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', onWinResize);
+    };
+  }, []);
 
   // Drag functionality
   const handleMouseDown = (e) => {
@@ -97,52 +157,36 @@ export default function PongGame({ onClose }) {
 
     const paddleWidth = 100;
     const paddleHeight = 10;
-    let paddleX = (canvas.width - paddleWidth) / 2;
-
     const ballRadius = 8;
-    let x = canvas.width / 2;
-    let y = canvas.height - 30;
-    let dx = 2;
-    let dy = -2;
-
-    if (gameStarted) {
-      x = canvas.width / 2;
-      y = canvas.height - 30;
-      paddleX = (canvas.width - paddleWidth) / 2;
-      dx = 2;
-      dy = -2;
-    }
-
-    let rightPressed = false;
-    let leftPressed = false;
 
     function keyDownHandler(e) {
-      if (e.key === 'Right' || e.key === 'ArrowRight') rightPressed = true;
-      else if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = true;
+      if (e.key === 'Right' || e.key === 'ArrowRight')
+        pressedRef.current.right = true;
+      else if (e.key === 'Left' || e.key === 'ArrowLeft')
+        pressedRef.current.left = true;
     }
 
     function keyUpHandler(e) {
-      if (e.key === 'Right' || e.key === 'ArrowRight') rightPressed = false;
-      else if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = false;
+      if (e.key === 'Right' || e.key === 'ArrowRight')
+        pressedRef.current.right = false;
+      else if (e.key === 'Left' || e.key === 'ArrowLeft')
+        pressedRef.current.left = false;
     }
 
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
 
     function drawPaddle() {
+      const paddleX = paddleXRef.current;
       ctx.beginPath();
-      ctx.rect(
-        paddleX,
-        canvas.height - paddleHeight - 10,
-        paddleWidth,
-        paddleHeight
-      );
+      ctx.rect(paddleX, BASE_H - paddleHeight - 10, paddleWidth, paddleHeight);
       ctx.fillStyle = '#ff4de3';
       ctx.fill();
       ctx.closePath();
     }
 
     function drawBall() {
+      const { x, y } = ballRef.current;
       ctx.beginPath();
       ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
       ctx.fillStyle = '#ffb3ff';
@@ -151,54 +195,79 @@ export default function PongGame({ onClose }) {
     }
 
     function drawBackground() {
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      const gradient = ctx.createLinearGradient(0, 0, BASE_W, BASE_H);
       gradient.addColorStop(0, '#1a001a');
       gradient.addColorStop(1, '#330033');
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, BASE_W, BASE_H);
     }
 
     function draw() {
       if (!canvas || gameOver) return;
+
+      const { sx, sy } = renderScaleRef.current;
+      ctx.setTransform(sx, 0, 0, sy, 0, 0);
+
       drawBackground();
       drawBall();
       drawPaddle();
 
-      if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-        dx = -dx;
+      const ball = ballRef.current;
+      let paddleX = paddleXRef.current;
+
+      const x = ball.x;
+      const y = ball.y;
+      const dx = ball.dx;
+      const dy = ball.dy;
+
+      if (x + dx > BASE_W - ballRadius || x + dx < ballRadius) {
+        ball.dx = -dx;
         playSound(800, 50);
       }
       if (y + dy < ballRadius) {
-        dy = -dy;
+        ball.dy = -dy;
         playSound(800, 50);
-      } else if (y + dy > canvas.height - ballRadius - 10) {
+      } else if (y + dy > BASE_H - ballRadius - 10) {
         if (x > paddleX && x < paddleX + paddleWidth) {
-            dy = -dy;
-            playSound(400, 100);
-            setScore((prev) => prev + 1);
-        } else if (y + dy > canvas.height - ballRadius) {
+          ball.dy = -dy;
+          playSound(400, 100);
+          setScore((prev) => prev + 1);
+        } else if (y + dy > BASE_H - ballRadius) {
           setGameOver(true);
           playSound(200, 200);
           return;
         }
       }
 
-      x += dx;
-      y += dy;
+      ball.x += ball.dx;
+      ball.y += ball.dy;
 
-      if (rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 7;
-      else if (leftPressed && paddleX > 0) paddleX -= 7;
+      const { left, right } = pressedRef.current;
+      if (right && paddleX < BASE_W - paddleWidth) paddleX += 7;
+      else if (left && paddleX > 0) paddleX -= 7;
+      paddleXRef.current = paddleX;
 
-      if (!gameOver) requestAnimationFrame(draw);
+      if (!gameOver) rafRef.current = requestAnimationFrame(draw);
     }
 
-    if (gameStarted && !gameOver) draw();
+    if (gameStarted && !gameOver) {
+      // Initialize positions only when (re)starting.
+      if (score === 0) {
+        paddleXRef.current = (BASE_W - paddleWidth) / 2;
+        ballRef.current = { x: BASE_W / 2, y: BASE_H - 30, dx: 2, dy: -2 };
+      }
+      draw();
+    }
 
     return () => {
       document.removeEventListener('keydown', keyDownHandler);
       document.removeEventListener('keyup', keyUpHandler);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
     };
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, score]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -207,8 +276,9 @@ export default function PongGame({ onClose }) {
         className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg p-4 max-w-lg w-full mx-4 relative shadow-2xl border border-gray-700 select-none"
         style={{
           position: 'fixed',
-          left: position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
-            top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
+          left:
+            position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
+          top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
           transform:
             position.x === 0 && position.y === 0
               ? 'translate(-50%, -50%)'
@@ -231,13 +301,20 @@ export default function PongGame({ onClose }) {
             Use arrow keys to move the paddle. Keep the ball alive!
           </p>
 
-          <canvas
-            ref={canvasRef}
-            width={480}
-            height={320}
-            style={{ border: '2px solid #ff66cc', borderRadius: '10px' }}
-            className="no-drag"
-          />
+          <div ref={canvasWrapRef} className="w-full">
+            <canvas
+              ref={canvasRef}
+              style={{
+                width: `${canvasCssSize.w}px`,
+                height: `${canvasCssSize.h}px`,
+                border: '2px solid #ff66cc',
+                borderRadius: '10px',
+                display: 'block',
+                margin: '0 auto',
+              }}
+              className="no-drag"
+            />
+          </div>
 
           <div className="mt-3 text-center">
             <p className="text-pink-300 text-lg">Score: {score}</p>

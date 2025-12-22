@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   X,
@@ -12,16 +12,56 @@ import {
 
 export default function Settings({
   wallpapers,
-  setWallpaper,
-  setTextSize,
-  setCursor,
+  textSize,
+  cursor,
+  wallpaper,
+  onSave,
+  onPreview,
   onClose,
 }) {
+  const [draftWallpaper, setDraftWallpaper] = useState(wallpaper);
+  const [draftTextSize, setDraftTextSize] = useState(textSize);
+  const [draftCursor, setDraftCursor] = useState(cursor);
+
   const [customWallpaper, setCustomWallpaper] = useState(null);
+  const [uploadError, setUploadError] = useState('');
+
+  const MAX_WALLPAPER_BYTES = 2 * 1024 * 1024; // 2MB
+
+  useEffect(() => {
+    if (typeof onPreview !== 'function') return;
+    onPreview({
+      wallpaper: draftWallpaper,
+      textSize: draftTextSize,
+      cursor: draftCursor,
+    });
+  }, [draftWallpaper, draftTextSize, draftCursor, onPreview]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (file) setCustomWallpaper(URL.createObjectURL(file));
+    if (!file) return;
+
+    setUploadError('');
+    setCustomWallpaper(null);
+
+    if (file.size > MAX_WALLPAPER_BYTES) {
+      setUploadError('Image too large. Please choose a file under 2MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : null;
+      if (!result) {
+        setUploadError('Could not read that file. Please try another image.');
+        return;
+      }
+      setCustomWallpaper(result);
+    };
+    reader.onerror = () => {
+      setUploadError('Could not read that file. Please try another image.');
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -81,7 +121,7 @@ export default function Settings({
                   <motion.img
                     key={i}
                     src={wp}
-                    onClick={() => setWallpaper(wp)}
+                    onClick={() => setDraftWallpaper(wp)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="h-24 w-full object-cover rounded-xl cursor-pointer border-2 border-transparent hover:border-blue-400/50 transition-all duration-200"
@@ -103,9 +143,15 @@ export default function Settings({
                   onChange={handleFileUpload}
                   className="w-full text-sm text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-500/20 file:text-blue-400 hover:file:bg-blue-500/30 file:cursor-pointer"
                 />
+
+                {uploadError && (
+                  <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                    {uploadError}
+                  </div>
+                )}
                 {customWallpaper && (
                   <motion.button
-                    onClick={() => setWallpaper(customWallpaper)}
+                    onClick={() => setDraftWallpaper(customWallpaper)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="mt-4 w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200"
@@ -136,9 +182,9 @@ export default function Settings({
                   <span className="text-white/80 font-medium">Text Size</span>
                 </div>
                 <select
-                  onChange={(e) => setTextSize(e.target.value)}
+                  onChange={(e) => setDraftTextSize(e.target.value)}
                   className="bg-white/10 border border-white/20 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400/50 focus:bg-white/15"
-                  defaultValue="text-base"
+                  value={draftTextSize}
                 >
                   <option value="text-sm" className="bg-gray-800">
                     Small
@@ -161,8 +207,9 @@ export default function Settings({
                   </span>
                 </div>
                 <select
-                  onChange={(e) => setCursor(e.target.value)}
+                  onChange={(e) => setDraftCursor(e.target.value)}
                   className="bg-white/10 border border-white/20 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400/50 focus:bg-white/15"
+                  value={draftCursor}
                 >
                   <option value="cursor-default" className="bg-gray-800">
                     Default
@@ -184,12 +231,18 @@ export default function Settings({
           {/* Footer */}
           <div className="pt-6 border-t border-white/10">
             <motion.button
-              onClick={onClose}
+              onClick={() =>
+                onSave({
+                  wallpaper: draftWallpaper,
+                  textSize: draftTextSize,
+                  cursor: draftCursor,
+                })
+              }
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full py-3 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg"
             >
-              Close Settings
+              Save Settings
             </motion.button>
           </div>
         </div>

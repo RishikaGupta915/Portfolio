@@ -1,30 +1,27 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ABOUT_POINTS = [
+  'Hey, I’m Rishika Gupta from the hills of Darjeeling!!',
+  'Currently juggling my interest in web dev, AI experiments, and cybersecurity rabbit holes but loving it all.',
+  'Doing my BCA at VIT Vellore – surviving exams one coffee at a time.',
+  'Built this website to showcase my skills in web dev, AI and animation',
+  'Outside academics, I keep my grades in check while curating playlists.',
+  'Free time = vibing to music, binge-watching series, and being a part-time singer.',
+  'I love connecting with new people & open to cool opportunities!!',
+  'Fair warning: I start as an introvert but once comfy, I’ll roast you with love:)',
+];
 
 export default function AboutMe({ onClose }) {
-  const points = [
-    ' Hey, I’m Rishika Gupta from the hills of Darjeeling!!',
-    ' Currently juggling my interest in web dev, AI experiments, and cybersecurity rabbit holes but loving it all.',
-    ' Doing my BCA at VIT Vellore – surviving exams one coffee at a time.',
-    ' Built this website to showcase my skills in web dev, AI and animation',
-    ' Outside academics, I keep my grades in check while curating playlists.',
-    ' Free time = vibing to music, binge-watching series, and being a part-time singer.',
-    ' I love connecting with new people & open to cool opportunities!!',
-    ' Fair warning: I start as an introvert but once comfy, I’ll roast you with love:)',
-  ];
-
   const [index, setIndex] = useState(0);
-  const length = points.length;
+  const length = ABOUT_POINTS.length;
 
   const displayedIndexRef = useRef(index);
   const targetIndexRef = useRef(index);
 
-  function lerp(a, b, t) {
-    return a + (b - a) * t;
-  }
+  const lerp = useCallback((a, b, t) => a + (b - a) * t, []);
 
   useEffect(() => {
     targetIndexRef.current = index;
@@ -35,7 +32,7 @@ export default function AboutMe({ onClose }) {
         displayedIndexRef.current,
         targetIndexRef.current,
         0.14
-      ); 
+      );
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -50,7 +47,6 @@ export default function AboutMe({ onClose }) {
     if (!canvas) return;
     let gl = canvas.getContext('webgl');
     if (!gl) {
-      
       return;
     }
 
@@ -63,7 +59,6 @@ export default function AboutMe({ onClose }) {
       gl.viewport(0, 0, canvas.width, canvas.height);
     }
 
-    
     const frag = `
     precision mediump float;
     uniform vec2 u_res;
@@ -143,7 +138,6 @@ export default function AboutMe({ onClose }) {
     }
     gl.useProgram(prog);
 
-    
     const pos = gl.getAttribLocation(prog, 'position');
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -155,7 +149,6 @@ export default function AboutMe({ onClose }) {
     gl.enableVertexAttribArray(pos);
     gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
 
-    
     const u_res = gl.getUniformLocation(prog, 'u_res');
     const u_time = gl.getUniformLocation(prog, 'u_time');
     const u_index = gl.getUniformLocation(prog, 'u_index');
@@ -167,10 +160,8 @@ export default function AboutMe({ onClose }) {
       u_time,
       u_index,
       start: performance.now(),
-      resized: false,
     };
 
-   
     let raf = null;
     function frame() {
       resize();
@@ -184,7 +175,6 @@ export default function AboutMe({ onClose }) {
     }
     frame();
 
-    
     const onResize = () => {
       resize();
     };
@@ -200,22 +190,25 @@ export default function AboutMe({ onClose }) {
     };
   }, []);
 
-  
-  const nextPoint = () => setIndex((prev) => (prev + 1) % length);
-  const prevPoint = () => setIndex((prev) => (prev - 1 + length) % length);
+  const nextPoint = useCallback(
+    () => setIndex((prev) => (prev + 1) % length),
+    [length]
+  );
+  const prevPoint = useCallback(
+    () => setIndex((prev) => (prev - 1 + length) % length),
+    [length]
+  );
 
-  
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'ArrowRight') nextPoint();
       if (e.key === 'ArrowLeft') prevPoint();
-      if (e.key === 'Escape') onClose && onClose();
+      if (e.key === 'Escape') onClose?.();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [nextPoint, prevPoint, onClose]);
 
-  
   const cardVariants = {
     enter: (dir = 1) => ({
       x: 120 * dir,
@@ -228,7 +221,7 @@ export default function AboutMe({ onClose }) {
       scale: 1,
       transition: {
         duration: 0.6,
-        ease: [0.16, 1, 0.3, 1], 
+        ease: [0.16, 1, 0.3, 1],
       },
     },
     exit: (dir = 1) => ({
@@ -240,56 +233,53 @@ export default function AboutMe({ onClose }) {
   };
 
   const containerRef = useRef(null);
-  const isInView = useInView(containerRef, { once: true, margin: '-20% 0px' }); 
+  const isInView = useInView(containerRef, { once: true, margin: '-20% 0px' });
 
-  
-  function handleDragEnd(event, info) {
-    const threshold = 80; 
-    const velocityThreshold = 300;
-    const offsetX = info.offset.x;
-    const velX = info.velocity.x;
+  const handleDragEnd = useCallback(
+    (event, info) => {
+      const threshold = 80;
+      const velocityThreshold = 300;
+      const offsetX = info.offset.x;
+      const velX = info.velocity.x;
 
-    
-    event.stopPropagation();
+      event.stopPropagation();
 
-    if (offsetX < -threshold || velX < -velocityThreshold) {
-     
-      setIndex((prev) => (prev + 1) % length);
-    } else if (offsetX > threshold || velX > velocityThreshold) {
-      
-      setIndex((prev) => (prev - 1 + length) % length);
-    }
-  }
+      if (offsetX < -threshold || velX < -velocityThreshold) {
+        nextPoint();
+      } else if (offsetX > threshold || velX > velocityThreshold) {
+        prevPoint();
+      }
+    },
+    [nextPoint, prevPoint]
+  );
 
-  
-  const handleDoubleClick = (e) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const centerX = rect.width / 2;
+  const handleDoubleClick = useCallback(
+    (e) => {
+      e.stopPropagation();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const centerX = rect.width / 2;
 
-    if (clickX > centerX) {
-      nextPoint(); 
-    } else {
-      prevPoint(); 
-    }
-  };
+      if (clickX > centerX) {
+        nextPoint();
+      } else {
+        prevPoint();
+      }
+    },
+    [nextPoint, prevPoint]
+  );
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => {
-        
-        if (e.target === e.currentTarget && !e.detail) {
-          onClose && onClose();
-        }
+        if (e.target === e.currentTarget) onClose?.();
       }}
     >
       <div
         ref={containerRef}
         className="relative w-full max-w-2xl mx-auto h-[440px] flex items-center justify-center text-center p-6 rounded-2xl overflow-hidden"
         style={{
-          
           background:
             'linear-gradient(180deg, rgba(10,6,18,0.75), rgba(6,2,10,0.65))',
           border: '1px solid rgba(255,120,240,0.06)',
@@ -305,7 +295,7 @@ export default function AboutMe({ onClose }) {
 
         {/* Top-right close */}
         <button
-          onClick={() => onClose && onClose()}
+          onClick={() => onClose?.()}
           className="absolute top-4 right-4 text-gray-300 hover:text-white z-20 p-2 rounded-full bg-black/40 backdrop-blur-sm"
           aria-label="Close about dialog"
         >
@@ -335,7 +325,7 @@ export default function AboutMe({ onClose }) {
                 whileTap={{ scale: 0.995 }}
                 whileDrag={{ scale: 1.02, cursor: 'grabbing' }}
                 style={{ cursor: 'grab' }}
-                className="select-none" 
+                className="select-none"
               >
                 <div
                   className="rounded-2xl p-8 shadow-2xl border border-white/6"
@@ -358,12 +348,12 @@ export default function AboutMe({ onClose }) {
                     }}
                     style={{ textShadow: '0 6px 30px rgba(140,40,180,0.12)' }}
                   >
-                    {points[index]}
+                    {ABOUT_POINTS[index]}
                   </motion.p>
 
                   <div className="mt-6 flex justify-center gap-2">
                     {/* small progress dots */}
-                    {points.map((_, i) => {
+                    {ABOUT_POINTS.map((_, i) => {
                       const displayed =
                         Math.abs(displayedIndexRef.current - i) < 0.5;
                       const active = i === index;
@@ -398,8 +388,8 @@ export default function AboutMe({ onClose }) {
                     transition={{ delay: 1, duration: 0.5 }}
                   >
                     <p className="text-xs text-white/60 font-light tracking-wide">
-                      💡 Double-click left/right or swipe to navigate • Press
-                      ESC to close
+                      Double-click left/right or swipe to navigate • Press ESC
+                      to close
                     </p>
                   </motion.div>
                 </div>

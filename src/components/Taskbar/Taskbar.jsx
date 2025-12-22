@@ -15,11 +15,14 @@ function Taskbar({ apps, allApps }) {
   const [time, setTime] = useState(new Date());
   const [weather, setWeather] = useState({
     temp: 28,
-    condition: 'Sunny',
+    condition: 'Clear',
     humidity: 65,
     windSpeed: 12,
-    location: 'Delhi, India',
+    location: 'Mumbai, India',
   });
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [geoStatus, setGeoStatus] = useState({ state: 'idle', message: '' });
+  const requestLocationWeatherRef = React.useRef(null);
   const [showWeatherDetails, setShowWeatherDetails] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [search, setSearch] = useState('');
@@ -57,33 +60,226 @@ function Taskbar({ apps, allApps }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Later: fetch weather from API
   useEffect(() => {
-    fetch(
-      'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/India?unitGroup=metric&key=N5Y39EFD59FKNAFQSJ9E5QKJV&contentType=json'
-    )
-      .then((res) => res.json())
-      .then((data) =>
-        setWeather({
-          temp: Math.round(data.currentConditions.temp),
-          condition: data.currentConditions.conditions,
-          humidity: data.currentConditions.humidity,
-          windSpeed: Math.round(data.currentConditions.windspeed),
-          location: 'Delhi, India',
-        })
-      )
-      .catch(() => {
-        setWeather({
-          temp: 28,
-          condition: 'Sunny',
-          humidity: 65,
-          windSpeed: 12,
-          location: 'Delhi, India',
-        });
+    const MUMBAI = { lat: 19.076, lon: 72.8777, label: 'Mumbai, India' };
+    const COORDS_CACHE_KEY = 'taskbarWeatherCoords';
+
+    const conditionFromWeatherCode = (code) => {
+      if (code === 0) return 'Clear';
+      if (code === 1) return 'Mainly clear';
+      if (code === 2) return 'Partly cloudy';
+      if (code === 3) return 'Overcast';
+      if (code === 45 || code === 48) return 'Fog';
+      if (code >= 51 && code <= 57) return 'Drizzle';
+      if (code >= 61 && code <= 67) return 'Rain';
+      if (code >= 71 && code <= 77) return 'Snow';
+      if (code >= 80 && code <= 82) return 'Showers';
+      if (code >= 95) return 'Thunderstorm';
+      return 'Cloudy';
+    };
+
+    const reverseGeocodeLabel = async (lat, lon) => {
+      try {
+        const res = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(
+            lat
+          )}&longitude=${encodeURIComponent(lon)}&localityLanguage=en`
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        const city = data.city || data.locality || data.principalSubdivision;
+        const country = data.countryName;
+        if (!city && !country) return null;
+        if (city && country) return `${city}, ${country}`;
+        return city || country;
+      } catch {
+        return null;
+      }
+    };
+
+    const fetchWeatherForCoords = async (lat, lon, fallbackLabel) => {
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(
+        lat
+      )}&longitude=${encodeURIComponent(
+        lon
+      )}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&temperature_unit=celsius&wind_speed_unit=kmh`;
+
+      const [weatherRes, label] = await Promise.all([
+        fetch(weatherUrl),
+        reverseGeocodeLabel(lat, lon),
+      ]);
+
+      if (!weatherRes.ok) throw new Error('Weather fetch failed');
+      const weatherData = await weatherRes.json();
+
+      const current = weatherData?.current;
+      const temp = current?.temperature_2m;
+      const humidity = current?.relative_humidity_2m;
+      const windSpeed = current?.wind_speed_10m;
+      const weatherCode = current?.weather_code;
+
+      setWeather({
+        temp: Number.isFinite(temp) ? Math.round(temp) : 0,
+        condition: Number.isFinite(weatherCode)
+          ? conditionFromWeatherCode(weatherCode)
+          : 'Cloudy',
+        humidity: Number.isFinite(humidity) ? Math.round(humidity) : 0,
+        windSpeed: Number.isFinite(windSpeed) ? Math.round(windSpeed) : 0,
+        location: label || fallbackLabel || 'Your location',
       });
+    };
+
+    let cancelled = false;
+    let refreshTimer = 0;
+
+    const load = async ({ requestedByUser = false } = {}) => {
+      setWeatherLoading(true);
+
+      // Show last known location quickly (then refresh with live geolocation if allowed).
+      try {
+        const cached = JSON.parse(
+          localStorage.getItem(COORDS_CACHE_KEY) || 'null'
+        );
+        if (
+          cached &&
+          typeof cached.lat === 'number' &&
+          typeof cached.lon === 'number' &&
+          Number.isFinite(cached.lat) &&
+          Number.isFinite(cached.lon)
+        ) {
+          await fetchWeatherForCoords(cached.lat, cached.lon, 'Your location');
+        }
+      } catch {
+        // ignore cache errors
+      }
+
+      const applyFallback = async () => {
+        try {
+          await fetchWeatherForCoords(MUMBAI.lat, MUMBAI.lon, MUMBAI.label);
+        } catch {
+          // Keep the default Mumbai values if even the API fails.
+        }
+      };
+
+      const isLocalhost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+      if (!window.isSecureContext && !isLocalhost) {
+        setGeoStatus({
+          state: 'insecure',
+          message: 'Location requires HTTPS to work.',
+        });
+        await applyFallback();
+        if (!cancelled) setWeatherLoading(false);
+        return;
+      }
+
+      const geoloc = navigator.geolocation;
+      if (!geoloc) {
+        setGeoStatus({
+          state: 'unavailable',
+          message: 'Location not available.',
+        });
+        await applyFallback();
+        if (!cancelled) setWeatherLoading(false);
+        return;
+      }
+
+      // If permissions API is supported, reflect it.
+      try {
+        if (navigator.permissions?.query) {
+          const perm = await navigator.permissions.query({
+            name: 'geolocation',
+          });
+          if (perm?.state === 'denied') {
+            setGeoStatus({
+              state: 'denied',
+              message: 'Location blocked. Allow it in browser settings.',
+            });
+            await applyFallback();
+            if (!cancelled) setWeatherLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // ignore permissions API errors
+      }
+
+      setGeoStatus({
+        state: 'requesting',
+        message: requestedByUser ? 'Requesting location…' : '',
+      });
+
+      geoloc.getCurrentPosition(
+        async (pos) => {
+          if (cancelled) return;
+          try {
+            await fetchWeatherForCoords(
+              pos.coords.latitude,
+              pos.coords.longitude,
+              'Your location'
+            );
+            try {
+              localStorage.setItem(
+                COORDS_CACHE_KEY,
+                JSON.stringify({
+                  lat: pos.coords.latitude,
+                  lon: pos.coords.longitude,
+                  ts: Date.now(),
+                })
+              );
+            } catch {
+              
+            }
+            setGeoStatus({ state: 'granted', message: '' });
+          } catch {
+            await applyFallback();
+            setGeoStatus({
+              state: 'error',
+              message: 'Could not load weather.',
+            });
+          }
+          if (!cancelled) setWeatherLoading(false);
+        },
+        async (err) => {
+          if (cancelled) return;
+          if (err?.code === 1) {
+            setGeoStatus({
+              state: 'denied',
+              message:
+                'Location blocked. Allow it in the browser prompt/settings.',
+            });
+          } else if (err?.code === 3) {
+            setGeoStatus({
+              state: 'timeout',
+              message: 'Location request timed out.',
+            });
+          } else {
+            setGeoStatus({
+              state: 'error',
+              message: 'Could not get your location.',
+            });
+          }
+
+          await applyFallback();
+          if (!cancelled) setWeatherLoading(false);
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 10 * 60 * 1000 }
+      );
+    };
+
+    requestLocationWeatherRef.current = (opts) => load(opts);
+
+    load();
+    refreshTimer = window.setInterval(load, 10 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      if (refreshTimer) window.clearInterval(refreshTimer);
+    };
   }, []);
 
-  // Search functionality - search through ALL apps, not just taskbar apps
+  // Search functionality 
   useEffect(() => {
     if (search.trim() && allApps && allApps.length > 0) {
       const filtered = allApps.filter(
@@ -119,7 +315,6 @@ function Taskbar({ apps, allApps }) {
     const value = e.target.value;
     setSearch(value);
 
-    // Debug logging
     console.log('Search value:', value);
     console.log('Available allApps:', allApps);
   };
@@ -268,12 +463,13 @@ function Taskbar({ apps, allApps }) {
             onClick={() => setShowWeatherDetails(!showWeatherDetails)}
             className="weather-button flex items-center space-x-1 p-2 rounded hover:bg-white/20 transition"
           >
-            {weather.condition.toLowerCase().includes('sun') ? (
+            {weather.condition.toLowerCase().includes('clear') ||
+            weather.condition.toLowerCase().includes('sun') ? (
               <Sun size={16} />
             ) : (
               <Cloud size={16} />
             )}
-            <span>{weather.temp}°C</span>
+            <span>{weatherLoading ? '--' : `${weather.temp}°C`}</span>
             {showWeatherDetails ? (
               <ChevronDown size={12} />
             ) : (
@@ -288,6 +484,27 @@ function Taskbar({ apps, allApps }) {
                 <MapPin size={14} />
                 <span className="text-xs font-medium">{weather.location}</span>
               </div>
+
+              {geoStatus.state !== 'granted' && (
+                <div className="mb-3">
+                  {geoStatus.message && (
+                    <div className="text-[11px] text-white/70 mb-2">
+                      {geoStatus.message}
+                    </div>
+                  )}
+                  <button
+                    onClick={() =>
+                      requestLocationWeatherRef.current?.({
+                        requestedByUser: true,
+                      })
+                    }
+                    className="no-drag text-[11px] px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition text-white"
+                  >
+                    Use my location
+                  </button>
+                </div>
+              )}
+
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span>Temperature:</span>

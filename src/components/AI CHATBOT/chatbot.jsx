@@ -3,14 +3,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function AIBrowser({ onClose }) {
-  const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  (process.env.NODE_ENV === "production" ? "" : "http://localhost:3000");
+  const API_BASE = import.meta.env.VITE_API_BASE || '';
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState([
     {
       type: 'ai',
-      content: "👋 Hello! I'm your AI assistant. Ask me anything!",
+      content: "Hello! I'm your AI assistant. Ask me anything!",
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -26,20 +24,19 @@ export default function AIBrowser({ onClose }) {
     scrollToBottom();
   }, [messages]);
 
-  // Check server connection on component mount
   useEffect(() => {
     checkServerConnection();
   }, []);
 
-const checkServerConnection = async () => {
-  try {
-    console.log('Attempting to connect to /api/health...');
-    const response = await fetch(`/api/health`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  const checkServerConnection = async () => {
+    try {
+      console.log('Attempting to connect to /api/health...');
+      const response = await fetch(`${API_BASE}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
@@ -90,7 +87,7 @@ const checkServerConnection = async () => {
     try {
       console.log('Sending question to API:', currentQuestion);
 
-      const res = await fetch(`/api/ask`, {
+      const res = await fetch(`${API_BASE}/api/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,7 +113,7 @@ const checkServerConnection = async () => {
       const errorMessage = {
         type: 'ai',
         content:
-          "❌ Connection failed. Please make sure you're running 'vercel dev' and try again.",
+          "Connection failed. Please make sure you're running 'vercel dev' and try again.",
         timestamp: new Date().toISOString(),
         error: true,
       };
@@ -138,7 +135,7 @@ const checkServerConnection = async () => {
     setMessages([
       {
         type: 'ai',
-        content: "👋 Hello! I'm your AI assistant. Ask me anything!",
+        content: "Hello! I'm your AI assistant. Ask me anything!",
         timestamp: new Date().toISOString(),
       },
     ]);
@@ -155,7 +152,6 @@ const checkServerConnection = async () => {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
           <div className="flex items-center space-x-3">
-            <div className="text-2xl">🤖</div>
             <div>
               <h1 className="text-xl font-bold text-white">AI Assistant</h1>
               <div className="flex items-center space-x-2">
@@ -184,8 +180,9 @@ const checkServerConnection = async () => {
               className="text-gray-400 hover:text-white transition-colors px-3 py-1 rounded hover:bg-gray-700/50"
               title="Clear chat"
             >
-              🗑️
+              Clear
             </button>
+
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition-colors text-xl font-bold w-8 h-8 flex items-center justify-center rounded hover:bg-gray-700/50"
@@ -219,11 +216,22 @@ const checkServerConnection = async () => {
                 >
                   <div className="flex items-start space-x-2">
                     <div className="text-lg">
-                      {message.type === 'user'
-                        ? '👤'
-                        : message.error
-                        ? '❌'
-                        : '🤖'}
+                      {message.type === 'user' ? (
+                        <a
+                          href="https://www.flaticon.com/free-icons/user"
+                          title="user icons"
+                        ></a>
+                      ) : message.error ? (
+                        <a
+                          href="https://www.flaticon.com/free-icons/error-message"
+                          title="error message icons"
+                        ></a>
+                      ) : (
+                        <a
+                          href="https://www.flaticon.com/free-icons/robot"
+                          title="robot icons"
+                        ></a>
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="whitespace-pre-wrap">{message.content}</p>
@@ -246,7 +254,6 @@ const checkServerConnection = async () => {
             >
               <div className="bg-gray-800/60 text-gray-100 border border-gray-600/30 rounded-2xl p-4">
                 <div className="flex items-center space-x-2">
-                  <div className="text-lg">🤖</div>
                   <div className="flex space-x-1">
                     <div
                       className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
@@ -288,7 +295,7 @@ const checkServerConnection = async () => {
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
-                'Send 🚀'
+                'Send '
               )}
             </button>
           </div>
@@ -296,10 +303,7 @@ const checkServerConnection = async () => {
           {isConnected === false && (
             <div className="mt-3 text-center">
               <div className="inline-flex items-center space-x-2 bg-red-900/50 text-red-200 px-4 py-2 rounded-lg border border-red-500/30">
-                <span>⚠️</span>
-                <span className="text-sm">
-                  API not connected. Please run: vercel dev
-                </span>
+                <span className="text-sm">API not connected.</span>
               </div>
             </div>
           )}

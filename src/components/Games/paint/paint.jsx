@@ -8,7 +8,7 @@ const TOOLS = {
   CIRCLE: 'circle',
   BUCKET: 'bucket',
   DROPPER: 'dropper',
-  HAND: 'hand',
+  MOVE: 'move',
 };
 
 export default function PaintApp({ onClose }) {
@@ -24,11 +24,20 @@ export default function PaintApp({ onClose }) {
   const [size, setSize] = useState(3);
   const [opacity, setOpacity] = useState(1);
 
-  // Drawing states
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startPos, setStartPos] = useState(null);
-  const [lastPos, setLastPos] = useState(null);
-  const [currentStroke, setCurrentStroke] = useState([]);
+  // Drawing state (refs to avoid rerendering on every mousemove)
+  const isDrawingRef = useRef(false);
+  const startPosRef = useRef(null);
+  const lastPosRef = useRef(null);
+
+  // Pan (hand tool)
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const panOffsetRef = useRef({ x: 0, y: 0 });
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const panBaseOffsetRef = useRef({ x: 0, y: 0 });
+  const rafPanRef = useRef(0);
+  const pendingPanRef = useRef(null);
+  const [isPanning, setIsPanning] = useState(false);
 
   // History for undo/redo
   const [history, setHistory] = useState([]);
@@ -107,10 +116,13 @@ export default function PaintApp({ onClose }) {
 
   // Drawing functions
   const getCanvasPos = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
     };
   };
 
@@ -173,58 +185,113 @@ export default function PaintApp({ onClose }) {
     ctx.strokeRect(start.x, start.y, width, height);
   };
 
+  const hexToRgb = (hex) => ({
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+  });
+
   const floodFill = (ctx, startX, startY, fillColor) => {
-    const imageData = ctx.getImageData(
-      0,
-      0,
-      ctx.canvas.width,
-      ctx.canvas.height
-    );
+    const canvasWidth = ctx.canvas.width;
+    const canvasHeight = ctx.canvas.height;
+    if (
+      startX < 0 ||
+      startX >= canvasWidth ||
+      startY < 0 ||
+      startY >= canvasHeight
+    )
+      return;
+
+    const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
 
     const startIndex = (startY * width + startX) * 4;
-    const startR = data[startIndex];
-    const startG = data[startIndex + 1];
-    const startB = data[startIndex + 2];
-    const startA = data[startIndex + 3];
+    const target = {
+      r: data[startIndex],
+      g: data[startIndex + 1],
+      b: data[startIndex + 2],
+      a: data[startIndex + 3],
+    };
 
-    const fillR = parseInt(fillColor.substr(1, 2), 16);
-    const fillG = parseInt(fillColor.substr(3, 2), 16);
-    const fillB = parseInt(fillColor.substr(5, 2), 16);
+    const fill = hexToRgb(fillColor);
+    const fillA = 255;
 
-    if (startR === fillR && startG === fillG && startB === fillB) return;
+    // Higher tolerance = more forgiving (fills anti-aliased edges cleanly).
+    // Keep this conservative so we don't "leak" across real boundaries.
+    const tolerance = 28;
+    const withinTol = (v, t) => Math.abs(v - t) <= tolerance;
 
-    const stack = [{ x: startX, y: startY }];
-    const visited = new Set();
+    const matchesTargetAtIndex = (index) =>
+      withinTol(data[index], target.r) &&
+      withinTol(data[index + 1], target.g) &&
+      withinTol(data[index + 2], target.b) &&
+      withinTol(data[index + 3], target.a);
 
-    while (stack.length > 0) {
-      const { x, y } = stack.pop();
-      const key = y * width + x;
-
-      if (x < 0 || x >= width || y < 0 || y >= height || visited.has(key))
-        continue;
-
+    const matchesTarget = (x, y) => {
       const index = (y * width + x) * 4;
-      if (
-        data[index] !== startR ||
-        data[index + 1] !== startG ||
-        data[index + 2] !== startB ||
-        data[index + 3] !== startA
-      )
-        continue;
+      return matchesTargetAtIndex(index);
+    };
 
-      visited.add(key);
-      data[index] = fillR;
-      data[index + 1] = fillG;
-      data[index + 2] = fillB;
-      data[index + 3] = 255;
+    const setFill = (x, y) => {
+      const index = (y * width + x) * 4;
+      data[index] = fill.r;
+      data[index + 1] = fill.g;
+      data[index + 2] = fill.b;
+      data[index + 3] = fillA;
+    };
 
-      stack.push({ x: x + 1, y });
-      stack.push({ x: x - 1, y });
-      stack.push({ x, y: y + 1 });
-      stack.push({ x, y: y - 1 });
+    // If the clicked pixel is already (effectively) the fill color, bail.
+    if (
+      withinTol(target.r, fill.r) &&
+      withinTol(target.g, fill.g) &&
+      withinTol(target.b, fill.b) &&
+      withinTol(target.a, fillA)
+    )
+      return;
+
+    // Scanline flood fill for smooth, complete fills.
+    const stack = [{ x: startX, y: startY }];
+    while (stack.length) {
+      const { x, y } = stack.pop();
+      if (x < 0 || x >= width || y < 0 || y >= height) continue;
+      if (!matchesTarget(x, y)) continue;
+
+      let xLeft = x;
+      while (xLeft >= 0 && matchesTarget(xLeft, y)) xLeft -= 1;
+      xLeft += 1;
+
+      let xRight = x;
+      while (xRight < width && matchesTarget(xRight, y)) xRight += 1;
+      xRight -= 1;
+
+      let inSpanAbove = false;
+      let inSpanBelow = false;
+
+      for (let xi = xLeft; xi <= xRight; xi += 1) {
+        setFill(xi, y);
+
+        if (y > 0) {
+          const aboveMatches = matchesTarget(xi, y - 1);
+          if (aboveMatches && !inSpanAbove) {
+            stack.push({ x: xi, y: y - 1 });
+            inSpanAbove = true;
+          } else if (!aboveMatches) {
+            inSpanAbove = false;
+          }
+        }
+
+        if (y < height - 1) {
+          const belowMatches = matchesTarget(xi, y + 1);
+          if (belowMatches && !inSpanBelow) {
+            stack.push({ x: xi, y: y + 1 });
+            inSpanBelow = true;
+          } else if (!belowMatches) {
+            inSpanBelow = false;
+          }
+        }
+      }
     }
 
     ctx.putImageData(imageData, 0, 0);
@@ -247,16 +314,23 @@ export default function PaintApp({ onClose }) {
 
   // Event handlers
   const handleCanvasMouseDown = (e) => {
+    if (tool === TOOLS.MOVE) {
+      isPanningRef.current = true;
+      setIsPanning(true);
+      panStartRef.current = { x: e.clientX, y: e.clientY };
+      panBaseOffsetRef.current = { ...panOffsetRef.current };
+      return;
+    }
+
     const pos = getCanvasPos(e);
     const canvas = canvasRef.current;
     const overlay = overlayRef.current;
     const ctx = canvas.getContext('2d');
     const overlayCtx = overlay.getContext('2d');
 
-    setIsDrawing(true);
-    setStartPos(pos);
-    setLastPos(pos);
-    setCurrentStroke([pos]);
+    isDrawingRef.current = true;
+    startPosRef.current = pos;
+    lastPosRef.current = pos;
 
     setupDrawingContext(ctx);
 
@@ -287,7 +361,27 @@ export default function PaintApp({ onClose }) {
   };
 
   const handleCanvasMouseMove = (e) => {
-    if (!isDrawing) return;
+    if (tool === TOOLS.MOVE && isPanningRef.current) {
+      const dx = e.clientX - panStartRef.current.x;
+      const dy = e.clientY - panStartRef.current.y;
+
+      pendingPanRef.current = {
+        x: panBaseOffsetRef.current.x + dx,
+        y: panBaseOffsetRef.current.y + dy,
+      };
+
+      if (!rafPanRef.current) {
+        rafPanRef.current = window.requestAnimationFrame(() => {
+          rafPanRef.current = 0;
+          if (!pendingPanRef.current) return;
+          panOffsetRef.current = pendingPanRef.current;
+          setPanOffset(pendingPanRef.current);
+        });
+      }
+      return;
+    }
+
+    if (!isDrawingRef.current) return;
 
     const pos = getCanvasPos(e);
     const canvas = canvasRef.current;
@@ -301,11 +395,10 @@ export default function PaintApp({ onClose }) {
     switch (tool) {
       case TOOLS.BRUSH:
       case TOOLS.ERASER:
-        if (lastPos) {
-          drawLine(ctx, lastPos, pos);
+        if (lastPosRef.current) {
+          drawLine(ctx, lastPosRef.current, pos);
         }
-        setLastPos(pos);
-        setCurrentStroke((prev) => [...prev, pos]);
+        lastPosRef.current = pos;
         break;
 
       case TOOLS.LINE:
@@ -315,19 +408,26 @@ export default function PaintApp({ onClose }) {
         overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
 
         if (tool === TOOLS.LINE) {
-          drawLine(overlayCtx, startPos, pos);
+          drawLine(overlayCtx, startPosRef.current, pos);
         } else if (tool === TOOLS.RECT) {
-          drawRect(overlayCtx, startPos, pos);
+          drawRect(overlayCtx, startPosRef.current, pos);
         } else if (tool === TOOLS.CIRCLE) {
-          const radius = Math.hypot(pos.x - startPos.x, pos.y - startPos.y);
-          drawCircle(overlayCtx, startPos, radius);
+          const start = startPosRef.current;
+          const radius = Math.hypot(pos.x - start.x, pos.y - start.y);
+          drawCircle(overlayCtx, start, radius);
         }
         break;
     }
   };
 
   const handleCanvasMouseUp = (e) => {
-    if (!isDrawing) return;
+    if (tool === TOOLS.MOVE) {
+      isPanningRef.current = false;
+      setIsPanning(false);
+      return;
+    }
+
+    if (!isDrawingRef.current) return;
 
     const pos = getCanvasPos(e);
     const canvas = canvasRef.current;
@@ -339,16 +439,17 @@ export default function PaintApp({ onClose }) {
 
     switch (tool) {
       case TOOLS.LINE:
-        drawLine(ctx, startPos, pos);
+        drawLine(ctx, startPosRef.current, pos);
         break;
 
       case TOOLS.RECT:
-        drawRect(ctx, startPos, pos);
+        drawRect(ctx, startPosRef.current, pos);
         break;
 
       case TOOLS.CIRCLE:
-        const radius = Math.hypot(pos.x - startPos.x, pos.y - startPos.y);
-        drawCircle(ctx, startPos, radius);
+        const start = startPosRef.current;
+        const radius = Math.hypot(pos.x - start.x, pos.y - start.y);
+        drawCircle(ctx, start, radius);
         break;
     }
 
@@ -365,11 +466,18 @@ export default function PaintApp({ onClose }) {
       saveToHistory();
     }
 
-    setIsDrawing(false);
-    setStartPos(null);
-    setLastPos(null);
-    setCurrentStroke([]);
+    isDrawingRef.current = false;
+    startPosRef.current = null;
+    lastPosRef.current = null;
   };
+
+  useEffect(() => {
+    return () => {
+      if (rafPanRef.current) {
+        window.cancelAnimationFrame(rafPanRef.current);
+      }
+    };
+  }, []);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -448,7 +556,7 @@ export default function PaintApp({ onClose }) {
                 {value === 'circle' && '⭕'}
                 {value === 'bucket' && '🪣'}
                 {value === 'dropper' && '💧'}
-                {value === 'hand' && '✋'}
+                {value === 'move' && '✋'}
               </button>
             ))}
           </div>
@@ -544,20 +652,33 @@ export default function PaintApp({ onClose }) {
           style={{ height: 'calc(100% - 120px)' }}
         >
           <div className="relative w-full h-full border-2 border-gray-600 rounded bg-white overflow-hidden">
-            <canvas
-              ref={canvasRef}
-              onMouseDown={handleCanvasMouseDown}
-              onMouseMove={handleCanvasMouseMove}
-              onMouseUp={handleCanvasMouseUp}
-              onMouseLeave={handleCanvasMouseUp}
-              className="absolute inset-0 cursor-crosshair"
-              style={{ width: '100%', height: '100%' }}
-            />
-            <canvas
-              ref={overlayRef}
-              className="absolute inset-0 pointer-events-none"
-              style={{ width: '100%', height: '100%' }}
-            />
+            <div
+              className="absolute inset-0"
+              style={{
+                transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
+              }}
+            >
+              <canvas
+                ref={canvasRef}
+                onMouseDown={handleCanvasMouseDown}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseUp={handleCanvasMouseUp}
+                onMouseLeave={handleCanvasMouseUp}
+                className={`absolute inset-0 ${
+                  tool === TOOLS.MOVE
+                    ? isPanning
+                      ? 'cursor-grabbing'
+                      : 'cursor-grab'
+                    : 'cursor-crosshair'
+                }`}
+                style={{ width: '100%', height: '100%' }}
+              />
+              <canvas
+                ref={overlayRef}
+                className="absolute inset-0 pointer-events-none"
+                style={{ width: '100%', height: '100%' }}
+              />
+            </div>
           </div>
         </div>
       </div>
