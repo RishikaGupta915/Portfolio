@@ -47,6 +47,10 @@ app.get('/health', (req, res) => {
   res.json(status);
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Chat endpoint
 app.post('/api/ask', async (req, res) => {
   try {

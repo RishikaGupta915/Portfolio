@@ -31,7 +31,7 @@ export default function AIBrowser({ onClose }) {
   const checkServerConnection = async () => {
     try {
       console.log('Attempting to connect to /api/health...');
-      const response = await fetch(`${API_BASE}/health`, {
+      const response = await fetch(`${API_BASE}/api/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
