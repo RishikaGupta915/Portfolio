@@ -12,7 +12,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing question' });
     }
 
-    if (!process.env.GROQ_API_KEY) {
+    const groqKey =
+      process.env.GROQ_API_KEY ||
+      process.env.GROQ_API_KEY_VERCEL ||
+      process.env.GROQ_KEY;
+
+    if (!groqKey) {
       return res.status(500).json({
         error:
           'Missing GROQ_API_KEY. Add it in your environment variables and redeploy (or set it locally for dev).',
@@ -25,10 +30,12 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          Authorization: `Bearer ${groqKey}`,
         },
         body: JSON.stringify({
-          model: 'deepseek-r1-distill-llama-70b',
+          // If you prefer another Groq model, change here.
+          model: 'llama-3.3-70b-versatile',
+          temperature: 0.4,
           messages: [
             { role: 'system', content: PROFILE_CONTEXT },
             { role: 'user', content: question },
@@ -43,8 +50,11 @@ export default async function handler(req, res) {
       : { error: await groqRes.text() };
 
     if (!groqRes.ok) {
+      const requestId = groqRes.headers.get('x-request-id') || undefined;
       return res.status(502).json({
         error: 'Upstream AI request failed',
+        upstreamStatus: groqRes.status,
+        requestId,
         details: data,
       });
     }
