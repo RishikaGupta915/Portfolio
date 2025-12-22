@@ -1,5 +1,3 @@
-import { PROFILE_CONTEXT } from '../shared/aiProfile.js';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -37,7 +35,11 @@ export default async function handler(req, res) {
           model: 'llama-3.3-70b-versatile',
           temperature: 0.4,
           messages: [
-            { role: 'system', content: PROFILE_CONTEXT },
+            {
+              role: 'system',
+              content:
+                'You are a helpful, friendly assistant. Answer the user clearly and concisely.',
+            },
             { role: 'user', content: question },
           ],
         }),

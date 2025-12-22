@@ -1,4 +1,9 @@
 
+// Temporarily disabled portfolio-specific context.
+// When you want to re-enable it, restore the original prompt below.
+export const PROFILE_CONTEXT = '';
+
+/*
 export const PROFILE_CONTEXT = `
 You are an assistant for a personal portfolio website.
 Your job is to answer questions about the portfolio owner using ONLY the information in "Owner Profile" below.
@@ -33,5 +38,5 @@ Owner Profile:
   - Email: <...>
   - LinkedIn: <...>
   - GitHub: <...>
-
 `;
+*/
