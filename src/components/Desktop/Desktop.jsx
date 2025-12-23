@@ -6,6 +6,7 @@ import pongIcon from '../../assets/pong.png';
 import snakeIcon from '../../assets/snake.png';
 import settingsIcon from '../../assets/settings.png';
 import paintIcon from '../../assets/paint.png';
+import musicIcon from '../../assets/music.png';
 import certificatesIcon from '../../assets/certificate.png';
 import aiChatbotIcon from '../../assets/cat.png';
 import aboutMeIcon from '../../assets/me.png';
@@ -19,6 +20,7 @@ export default function Desktop({
   onOpenPong,
   onOpenSnake,
   onOpenPaint,
+  onOpenMusic,
   onOpenCertificates,
   onOpenAIChatbot,
   onOpenAboutMe,
@@ -161,6 +163,28 @@ export default function Desktop({
           />
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Paint
+          </span>
+        </motion.div>
+
+        {/* Music App Icon */}
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onOpenMusic}
+          className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
+        >
+          <img
+            src={musicIcon}
+            alt="Music"
+            className="w-12 h-12 mb-1"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling;
+              if (fallback) fallback.classList.remove('hidden');
+            }}
+          />
+          <span className="text-white text-xs font-medium text-center drop-shadow-lg">
+            Music
           </span>
         </motion.div>
       </div>

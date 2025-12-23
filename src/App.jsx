@@ -8,6 +8,7 @@ import TicTacToe from './components/Games/TicTacToe/tictactoe';
 import Pong from './components/Games/Pong/pong';
 import SnakeGame from './components/Games/Snake/snake';
 import PaintApp from './components/Games/paint/paint';
+import MusicPlayer from './components/Music/player';
 import Certificates from './components/About/certificates';
 import AIBrowser from './components/AI CHATBOT/chatbot';
 import AboutMe from './components/About/about';
@@ -22,6 +23,7 @@ import pongIcon from './assets/pong.png';
 import snakeIcon from './assets/snake.png';
 import paintIcon from './assets/paint.png';
 import contactIcon from './assets/contact.png';
+import musicIcon from './assets/music.png';
 
 import heartCursor from './assets/heart.cur';
 
@@ -43,6 +45,10 @@ function App() {
   const [showPong, setShowPong] = useState(false);
   const [showSnake, setShowSnake] = useState(false);
   const [showPaint, setShowPaint] = useState(false);
+  const [showMusic, setShowMusic] = useState(false);
+  const [musicMounted, setMusicMounted] = useState(false);
+  const [musicKeepPlayingInBackground, setMusicKeepPlayingInBackground] =
+    useState(false);
   const [showCertificates, setShowCertificates] = useState(false);
   const [showAIChatbot, setShowAIChatbot] = useState(false);
   const [showAboutMe, setShowAboutMe] = useState(false);
@@ -107,7 +113,7 @@ function App() {
       style.id = styleId;
       document.head.appendChild(style);
     }
-    
+
     style.textContent = cursorCss;
 
     const cssCursor = cursorValueByClass[cursor] || 'auto';
@@ -133,6 +139,11 @@ function App() {
   const openSettings = () => {
     settingsSnapshotRef.current = { wallpaper, textSize, cursor };
     setShowSettings(true);
+  };
+
+  const openMusic = () => {
+    setMusicMounted(true);
+    setShowMusic(true);
   };
 
   const handlePreviewSettings = ({ wallpaper, textSize, cursor }) => {
@@ -223,6 +234,13 @@ function App() {
       onClick: () => setShowPaint(true),
       category: 'creative',
     },
+    {
+      id: 'music',
+      name: 'Music',
+      icon: musicIcon,
+      onClick: openMusic,
+      category: 'music',
+    },
   ];
 
   const taskbarApps = [
@@ -272,6 +290,7 @@ function App() {
             onOpenPong={() => setShowPong(true)}
             onOpenSnake={() => setShowSnake(true)}
             onOpenPaint={() => setShowPaint(true)}
+            onOpenMusic={openMusic}
             onOpenCertificates={() => setShowCertificates(true)}
             onOpenAIChatbot={() => setShowAIChatbot(true)}
             onOpenAboutMe={() => setShowAboutMe(true)}
@@ -295,6 +314,21 @@ function App() {
           {showPong && <Pong onClose={() => setShowPong(false)} />}
           {showSnake && <SnakeGame onClose={() => setShowSnake(false)} />}
           {showPaint && <PaintApp onClose={() => setShowPaint(false)} />}
+          {musicMounted && (
+            <MusicPlayer
+              isOpen={showMusic}
+              keepPlayingInBackground={musicKeepPlayingInBackground}
+              onChangeKeepPlayingInBackground={setMusicKeepPlayingInBackground}
+              onClose={() => {
+                if (musicKeepPlayingInBackground) {
+                  setShowMusic(false);
+                } else {
+                  setShowMusic(false);
+                  setMusicMounted(false);
+                }
+              }}
+            />
+          )}
           {showCertificates && (
             <Certificates onClose={() => setShowCertificates(false)} />
           )}
