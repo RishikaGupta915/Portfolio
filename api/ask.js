@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     if (!groqKey) {
       return res.status(500).json({
         error:
-          'Missing GROQ_API_KEY. Add it in your environment variables and redeploy (or set it locally for dev).',
+          'Missing GROQ_API_KEY.',
       });
     }
 

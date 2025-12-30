@@ -63,9 +63,9 @@ export default function App() {
     const styleId = 'global-cursor-style';
     const cursorCss = [
       'body, body * { cursor: var(--app-cursor, auto) !important; }',
-      // Always show pointer on interactive UI (app icons/buttons/links).
+      // Always show pointer
       'a, a *, button, button *, [role="button"], [role="button"] *, [role="link"], [role="link"] *, .cursor-pointer, .cursor-pointer * { cursor: pointer !important; }',
-      // Keep text cursor for inputs.
+      // Keep text cursor for inputs
       'input, textarea, select { cursor: text !important; }',
     ].join('\n');
 

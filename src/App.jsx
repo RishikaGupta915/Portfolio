@@ -24,6 +24,7 @@ import snakeIcon from './assets/snake.png';
 import paintIcon from './assets/paint.png';
 import contactIcon from './assets/contact.png';
 import musicIcon from './assets/music.png';
+import mobileOverlay from './assets/mobile.png';
 
 import heartCursor from './assets/heart.cur';
 
@@ -34,6 +35,9 @@ import wallpaper3 from './assets/wall3.jpg';
 import wallpaper4 from './assets/wall4.jpg';
 
 function App() {
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
+  const [mobileGateDismissed, setMobileGateDismissed] = useState(false);
+
   const [booting, setBooting] = useState(true);
   const [wallpaper, setWallpaper] = useState(defaultWallpaper);
   const [textSize, setTextSize] = useState('text-base');
@@ -61,6 +65,30 @@ function App() {
     wallpaper3,
     wallpaper4,
   ];
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      typeof window.matchMedia !== 'function'
+    ) {
+      setIsMobileScreen(false);
+      return;
+    }
+
+    const mq = window.matchMedia('(max-width: 767px)'); // Tailwind md breakpoint
+
+    const update = () => setIsMobileScreen(!!mq.matches);
+    update();
+
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', update);
+      return () => mq.removeEventListener('change', update);
+    }
+
+    // Safari fallback
+    mq.addListener(update);
+    return () => mq.removeListener(update);
+  }, []);
 
   useEffect(() => {
     try {
@@ -278,7 +306,21 @@ function App() {
 
   return (
     <div className={`fixed inset-0 ${textSize} ${cursor}`}>
-      {booting ? (
+      {isMobileScreen && !mobileGateDismissed ? (
+        <div
+          className="fixed inset-0 z-[9999] bg-black"
+          role="button"
+          aria-label="Tap to enter"
+          onClick={() => setMobileGateDismissed(true)}
+        >
+          <img
+            src={mobileOverlay}
+            alt="Tap to enter"
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+        </div>
+      ) : booting ? (
         <BootSequence onComplete={() => setBooting(false)} />
       ) : (
         <>

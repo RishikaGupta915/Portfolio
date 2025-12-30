@@ -228,9 +228,7 @@ function Taskbar({ apps, allApps }) {
                   ts: Date.now(),
                 })
               );
-            } catch {
-              
-            }
+            } catch {}
             setGeoStatus({ state: 'granted', message: '' });
           } catch {
             await applyFallback();
@@ -279,20 +277,48 @@ function Taskbar({ apps, allApps }) {
     };
   }, []);
 
-  // Search functionality 
+  // Search functionality
   useEffect(() => {
-    if (search.trim() && allApps && allApps.length > 0) {
-      const filtered = allApps.filter(
-        (app) =>
-          app.name.toLowerCase().includes(search.toLowerCase()) ||
-          app.category.toLowerCase().includes(search.toLowerCase())
-      );
-      setFilteredApps(filtered);
-      setShowSearchResults(true);
-    } else {
+    const query = search.trim().toLowerCase();
+    const list = Array.isArray(allApps) ? allApps : [];
+
+    if (!query) {
       setFilteredApps([]);
       setShowSearchResults(false);
+      return;
     }
+
+    // Keep dropdown open while typing even if no matches
+    setShowSearchResults(true);
+
+    const scoreApp = (app) => {
+      const name = String(app?.name || '').toLowerCase();
+      const category = String(app?.category || '').toLowerCase();
+
+      const nameWords = name.split(/\s+/).filter(Boolean);
+      const wordStarts = nameWords.some((w) => w.startsWith(query));
+
+      // Lower score = higher priority
+      if (name.startsWith(query)) return 0;
+      if (wordStarts) return 1;
+      if (category.startsWith(query)) return 2;
+      if (name.includes(query)) return 3;
+      if (category.includes(query)) return 4;
+      return 999;
+    };
+
+    const filtered = list
+      .filter((app) => scoreApp(app) < 999)
+      .map((app) => ({ app, score: scoreApp(app) }))
+      .sort((a, b) => {
+        if (a.score !== b.score) return a.score - b.score;
+        const an = String(a.app?.name || '');
+        const bn = String(b.app?.name || '');
+        return an.localeCompare(bn);
+      })
+      .map((x) => x.app);
+
+    setFilteredApps(filtered);
   }, [search, allApps]);
 
   const handleSearchSelect = (app) => {
@@ -314,9 +340,6 @@ function Taskbar({ apps, allApps }) {
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearch(value);
-
-    console.log('Search value:', value);
-    console.log('Available allApps:', allApps);
   };
   const generateCalendar = (date) => {
     const year = date.getFullYear();
@@ -368,9 +391,7 @@ function Taskbar({ apps, allApps }) {
             onChange={handleSearchChange}
             onKeyDown={handleSearchKeyDown}
             onFocus={() => {
-              if (search.trim() && filteredApps.length > 0) {
-                setShowSearchResults(true);
-              }
+              if (search.trim()) setShowSearchResults(true);
             }}
             className="search-input w-full h-8 px-3 pl-8 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-white/60 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
           />

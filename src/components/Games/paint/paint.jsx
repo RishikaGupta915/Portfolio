@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import DraggableWindow from '../../Dragable/dragable';
 
 const TOOLS = {
   BRUSH: 'brush',
@@ -12,10 +13,10 @@ const TOOLS = {
 };
 
 export default function PaintApp({ onClose }) {
-  const modalRef = useRef(null);
   const canvasRef = useRef(null);
   const overlayRef = useRef(null);
   const fileRef = useRef(null);
+  const rafPanRef = useRef(0);
 
   // Tool and drawing states
   const [tool, setTool] = useState(TOOLS.BRUSH);
@@ -27,7 +28,6 @@ export default function PaintApp({ onClose }) {
   // Drawing state (refs to avoid rerendering on every mousemove)
   const isDrawingRef = useRef(false);
   const startPosRef = useRef(null);
-  const lastPosRef = useRef(null);
 
   // Pan (hand tool)
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -35,18 +35,12 @@ export default function PaintApp({ onClose }) {
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const panBaseOffsetRef = useRef({ x: 0, y: 0 });
-  const rafPanRef = useRef(0);
   const pendingPanRef = useRef(null);
   const [isPanning, setIsPanning] = useState(false);
 
   // History for undo/redo
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-
-  // Draggable window states
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState({ x: 0, y: 0 });
 
   // Initialize canvas
   useEffect(() => {
@@ -71,48 +65,6 @@ export default function PaintApp({ onClose }) {
     // Save initial state
     saveToHistory();
   }, [bgColor]);
-
-  // Drag functionality
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.no-drag')) return;
-
-    const rect = modalRef.current.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-    setIsDragging(true);
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
-
-    const maxX = window.innerWidth - (modalRef.current?.offsetWidth || 0);
-    const maxY = window.innerHeight - (modalRef.current?.offsetHeight || 0);
-
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY)),
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, dragOffset]);
 
   // Drawing functions
   const getCanvasPos = (e) => {
@@ -503,135 +455,127 @@ export default function PaintApp({ onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-20">
-      <div
-        ref={modalRef}
+      <DraggableWindow
         className="bg-gray-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl select-none"
         style={{
-          position: 'fixed',
-          left:
-            position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
-          top: position.y === 0 && position.y === 0 ? '45%' : `${position.y}px`,
-          transform:
-            position.x === 0 && position.y === 0
-              ? 'translate(-50%, -50%)'
-              : 'none',
           width: '1000px',
           height: '600px',
         }}
-        onMouseDown={handleMouseDown}
       >
         {/* Title Bar */}
-        <div className="flex justify-between items-center p-3 border-b border-white/20 bg-gray-800/50 rounded-t-xl">
+        <div
+          data-drag-handle
+          className="flex justify-between items-center px-3 py-2 border-b border-white/20 bg-gray-800/50 rounded-t-xl cursor-move"
+        >
           <div className="flex items-center gap-2">
-            <span className="text-xl">🎨</span>
-            <h1 className="text-lg font-bold text-pink-400">Paint</h1>
+            <h1 className="text-base font-bold text-pink-400">Paint</h1>
           </div>
           <button
             onClick={onClose}
-            className="no-drag text-white/60 hover:text-white text-xl font-bold w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 transition-colors cursor-pointer"
+            className="no-drag text-white/60 hover:text-white text-lg font-bold w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 transition-colors cursor-pointer"
           >
             ×
           </button>
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 p-3 border-b border-white/20 bg-gray-800/30 no-drag">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-white/20 bg-gray-800/30 no-drag">
           {/* Tools */}
           <div className="flex gap-1">
             {Object.entries(TOOLS).map(([key, value]) => (
               <button
                 key={value}
                 onClick={() => setTool(value)}
-                className={`px-3 py-2 rounded text-sm font-medium transition cursor-pointer ${
+                className={`px-2 py-1 rounded-md text-xs font-medium leading-none transition cursor-pointer min-w-9 h-8 ${
                   tool === value
                     ? 'bg-pink-500 text-white'
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
                 title={key}
               >
-                {value === 'brush' && '🖌️'}
-                {value === 'eraser' && '🧽'}
-                {value === 'line' && '📏'}
-                {value === 'rect' && '⬜'}
-                {value === 'circle' && '⭕'}
-                {value === 'bucket' && '🪣'}
-                {value === 'dropper' && '💧'}
-                {value === 'move' && '✋'}
+                {value === 'brush' && '🖌'}
+                {value === 'eraser' && '🫧'}
+                {value === 'line' && '───'}
+                {value === 'rect' && '███'}
+                {value === 'circle' && '𖧋'}
+                {value === 'bucket' && '🗑'}
+                {value === 'dropper' && '𓄼𓄼'}
+                {value === 'move' && 'જ⁀➴'}
               </button>
             ))}
           </div>
 
-          <div className="w-px h-8 bg-white/20 mx-2"></div>
+          <div className="w-px h-7 bg-white/20 mx-2"></div>
 
           {/* Controls */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">Color:</label>
+              <label className="text-xs text-gray-300">Color:</label>
               <input
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="w-8 h-8 rounded border-none cursor-pointer"
+                className="w-7 h-7 rounded border-none cursor-pointer"
               />
             </div>
 
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">Size:</label>
+              <label className="text-xs text-gray-300">Size:</label>
               <input
                 type="range"
                 min="1"
                 max="50"
                 value={size}
                 onChange={(e) => setSize(Number(e.target.value))}
-                className="w-20 accent-pink-500 cursor-pointer"
+                className="w-16 accent-pink-500 cursor-pointer"
               />
-              <span className="text-sm text-gray-300 w-6">{size}</span>
+              <span className="text-xs text-gray-300 w-6">{size}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">BG:</label>
+              <label className="text-xs text-gray-300">BG:</label>
               <input
                 type="color"
                 value={bgColor}
                 onChange={(e) => setBgColor(e.target.value)}
-                className="w-8 h-8 rounded border-none cursor-pointer"
+                className="w-7 h-7 rounded border-none cursor-pointer"
               />
             </div>
           </div>
 
-          <div className="w-px h-8 bg-white/20 mx-2"></div>
+          <div className="w-px h-7 bg-white/20 mx-2"></div>
 
           {/* Actions */}
           <div className="flex gap-2">
             <button
               onClick={undo}
               disabled={historyIndex <= 0}
-              className="px-3 py-1 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-2 py-1 bg-gray-700 text-gray-300 rounded-md text-xs hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               ↶ Undo
             </button>
             <button
               onClick={redo}
               disabled={historyIndex >= history.length - 1}
-              className="px-3 py-1 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-2 py-1 bg-gray-700 text-gray-300 rounded-md text-xs hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               ↷ Redo
             </button>
             <button
               onClick={clearCanvas}
-              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer"
+              className="px-2 py-1 bg-pink-400 text-black rounded-md text-xs hover:bg-pink-500 cursor-pointer"
             >
               Clear
             </button>
             <button
               onClick={() => fileRef.current?.click()}
-              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
+              className="px-2 py-1 bg-blue-300 text-black rounded-md text-xs hover:bg-blue-400 cursor-pointer"
             >
               Import
             </button>
             <button
               onClick={handleDownload}
-              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
+              className="px-2 py-1 bg-yellow-300 text-black rounded-md text-xs hover:bg-yellow-400 cursor-pointer"
             >
               Save
             </button>
@@ -681,7 +625,7 @@ export default function PaintApp({ onClose }) {
             </div>
           </div>
         </div>
-      </div>
+      </DraggableWindow>
     </div>
   );
 }

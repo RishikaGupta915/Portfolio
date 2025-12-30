@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import DraggableWindow from '../Dragable/dragable';
 import {
   X,
   Mail,
@@ -102,155 +103,162 @@ export default function Contact({ onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-        className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 max-w-4xl w-full max-h-[calc(100vh-8rem)] shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center ">
-          <h2 className="text-xl font-bold text-white">Contact Me</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors"
+      <DraggableWindow>
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+          className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 sm:p-8 w-full max-w-xl sm:max-w-2xl lg:max-w-4xl max-h-[calc(100vh-7rem)] sm:max-h-[calc(100vh-8rem)] shadow-2xl overflow-y-auto custom-scrollbar scroll-smooth"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            data-drag-handle
+            className="flex justify-between items-center select-none cursor-move"
           >
-            <X className="w-4 h-4 text-white" />
-          </button>
-        </div>
-
-        {/* Profile Section */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="w-10 h-10 text-white" />
-          </div>
-
-          {/* Name */}
-          <h3 className="text-xl font-semibold text-white mb-2 min-h-[28px]">
-            {nameText}
-            {nameText.length < nameToDisplay.length && (
-              <motion.span
-                animate={{ opacity: [1, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="inline-block w-0.5 h-5 bg-white ml-1"
-              />
-            )}
-          </h3>
-
-          {/* Roles */}
-          <div className="text-white/70 text-sm min-h-[20px]">
-            {rolesText}
-            {nameText.length === nameToDisplay.length && (
-              <motion.span
-                animate={{ opacity: [1, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="inline-block w-0.5 h-4 bg-white/70 ml-1"
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Email */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="flex items-center space-x-3 p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all group"
-            onClick={handleEmailClick}
-          >
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Mail className="w-5 h-5 text-blue-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-white/60 text-xs">Email</p>
-              <p className="text-white font-medium text-sm">
-                {contactInfo.email}
-              </p>
-            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-white">
+              Contact Me
+            </h2>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                copyToClipboard(contactInfo.email, 'Email');
-              }}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors"
             >
-              <Copy className="w-4 h-4 text-white/60 " />
+              <X className="w-4 h-4 text-white" />
             </button>
-          </motion.div>
+          </div>
 
-          {/* Phone */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="flex items-center space-x-3 p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all group"
-            onClick={handlePhoneClick}
-          >
-            <div className="p-2 bg-green-500/20 rounded-lg">
-              <Phone className="w-5 h-5 text-green-400" />
+          {/* Profile Section */}
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
             </div>
-            <div className="flex-1">
-              <p className="text-white/60 text-xs">Phone</p>
-              <p className="text-white font-medium text-sm">
-                {contactInfo.phone}
-              </p>
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                copyToClipboard(contactInfo.phone, 'Phone');
-              }}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-            >
-              <Copy className="w-4 h-4 text-white/60" />
-            </button>
-          </motion.div>
 
-          {/* Location */}
-          <div className="flex items-center space-x-3 p-4 bg-white/5 rounded-xl border border-white/10 md:col-span-2">
-            <div className="p-2 bg-red-500/20 rounded-lg">
-              <MapPin className="w-5 h-5 text-red-400" />
-            </div>
-            <div className="flex-1">
-              <p className="text-white/60 text-xs">Location</p>
-              <p className="text-white font-medium">{contactInfo.location}</p>
+            {/* Name */}
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 min-h-[28px]">
+              {nameText}
+              {nameText.length < nameToDisplay.length && (
+                <motion.span
+                  animate={{ opacity: [1, 0] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                  className="inline-block w-0.5 h-5 bg-white ml-1"
+                />
+              )}
+            </h3>
+
+            {/* Roles */}
+            <div className="text-white/70 text-xs sm:text-sm min-h-[20px]">
+              {rolesText}
+              {nameText.length === nameToDisplay.length && (
+                <motion.span
+                  animate={{ opacity: [1, 0] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                  className="inline-block w-0.5 h-4 bg-white/70 ml-1"
+                />
+              )}
             </div>
           </div>
 
-          {/* Social Links */}
-          <div className="md:col-span-2 flex space-x-6 pt-4">
-            <motion.a
-              href={contactInfo.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 flex items-center justify-center space-x-2 p-3 bg-gray-600/20 rounded-xl border border-white/10 hover:bg-gray-600/30 transition-all"
+          {/* Contact Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {/* Email */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="flex items-center space-x-3 p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all group"
+              onClick={handleEmailClick}
             >
-              <Github className="w-4 h-4 text-white" />
-              <span className="text-white text-sm font-medium">GitHub</span>
-            </motion.a>
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Mail className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white/60 text-xs">Email</p>
+                <p className="text-white font-medium text-sm break-all">
+                  {contactInfo.email}
+                </p>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  copyToClipboard(contactInfo.email, 'Email');
+                }}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+              >
+                <Copy className="w-4 h-4 text-white/60 " />
+              </button>
+            </motion.div>
 
-            <motion.a
-              href={contactInfo.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 flex items-center justify-center space-x-2 p-3 bg-blue-600/20 rounded-xl border border-white/10 hover:bg-blue-600/30 transition-all"
+            {/* Phone */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="flex items-center space-x-3 p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all group"
+              onClick={handlePhoneClick}
             >
-              <Linkedin className="w-5 h-5 text-blue-400" />
-              <span className="text-white text-sm font-medium">LinkedIn</span>
-            </motion.a>
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <Phone className="w-5 h-5 text-green-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white/60 text-xs">Phone</p>
+                <p className="text-white font-medium text-sm">
+                  {contactInfo.phone}
+                </p>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  copyToClipboard(contactInfo.phone, 'Phone');
+                }}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+              >
+                <Copy className="w-4 h-4 text-white/60" />
+              </button>
+            </motion.div>
+
+            {/* Location */}
+            <div className="flex items-center space-x-3 p-3 sm:p-4 bg-white/5 rounded-xl border border-white/10 md:col-span-2">
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <MapPin className="w-5 h-5 text-red-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white/60 text-xs">Location</p>
+                <p className="text-white font-medium">{contactInfo.location}</p>
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="md:col-span-2 flex flex-col sm:flex-row gap-3 sm:gap-6 pt-3 sm:pt-4">
+              <motion.a
+                href={contactInfo.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex-1 flex items-center justify-center space-x-2 p-3 bg-gray-600/20 rounded-xl border border-white/10 hover:bg-gray-600/30 transition-all"
+              >
+                <Github className="w-4 h-4 text-white" />
+                <span className="text-white text-sm font-medium">GitHub</span>
+              </motion.a>
+
+              <motion.a
+                href={contactInfo.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex-1 flex items-center justify-center space-x-2 p-3 bg-blue-600/20 rounded-xl border border-white/10 hover:bg-blue-600/30 transition-all"
+              >
+                <Linkedin className="w-5 h-5 text-blue-400" />
+                <span className="text-white text-sm font-medium">LinkedIn</span>
+              </motion.a>
+            </div>
           </div>
-        </div>
 
-        {/* Footer Message */}
-        <div className="mt-8 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl border border-white/10">
-          <p className="text-white/80 text-sm text-center">
-            💼 Let's connect and discuss opportunities!
-          </p>
-        </div>
-      </motion.div>
+          {/* Footer Message */}
+          <div className="mt-6 sm:mt-8 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl border border-white/10">
+            <p className="text-white/80 text-xs sm:text-sm text-center">
+              Let's connect and discuss opportunities!
+            </p>
+          </div>
+        </motion.div>
+      </DraggableWindow>
     </motion.div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import DraggableWindow from '../Dragable/dragable';
 
 const PDF_FILES = [
   'Advanced Networking, Virtualization, and IT.pdf',
@@ -221,7 +222,7 @@ const CERTIFICATES = PDF_FILES.map((file, index) => {
     id: index + 1,
     title,
     issuer: 'Coursera',
-    date: '2023-2024',
+    date: '2024-2025',
     category,
     pdfUrl: new URL(`../../assets/COURSES/${file}`, import.meta.url).href,
     skills: getCertificateSkills(file),
@@ -259,14 +260,16 @@ export default function Certificates({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      style={{ bottom: '60px' }}
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
       }}
     >
-      <div className="relative min-h-[85vh] max-h-[85vh] w-full max-w-6xl bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-purple-500/20">
-        <div className="flex items-center justify-between bg-gray-800/90 px-6 py-3 border-b border-gray-700/50 backdrop-blur-sm">
+      <DraggableWindow className="relative min-h-[85vh] max-h-[85vh] w-full max-w-6xl bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-purple-500/20">
+        <div
+          data-drag-handle
+          className="flex items-center justify-between bg-gray-800/90 px-6 py-3 border-b border-gray-700/50 cursor-move select-none"
+        >
           <h1 className="text-xl font-bold text-white">My Certificates</h1>
           <button
             onClick={onClose}
@@ -278,12 +281,12 @@ export default function Certificates({ onClose }) {
         </div>
 
         <div
-          className="h-full overflow-y-auto p-6 custom-scrollbar"
+          className="h-full overflow-y-auto p-6 custom-scrollbar scroll-smooth"
           style={{ height: 'calc(85vh - 52px)' }}
         >
           <div className="text-center mb-8">
             <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-              A collection of professional certifications and course
+              A collection of my professional certifications and course
               completions.
             </p>
           </div>
@@ -397,7 +400,7 @@ export default function Certificates({ onClose }) {
             </div>
           )}
         </div>
-      </div>
+      </DraggableWindow>
 
       <AnimatePresence>
         {isModalOpen && selectedCert && (
@@ -405,83 +408,99 @@ export default function Certificates({ onClose }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20"
             onClick={closeCertificate}
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: 'spring', duration: 0.35 }}
-              className="bg-gray-900 rounded-2xl overflow-hidden max-w-6xl w-full max-h-[95vh] shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">
-                    {selectedCert.title}
-                  </h2>
-                  <p className="text-purple-300">
-                    {selectedCert.issuer} • {selectedCert.date}
-                  </p>
-                </div>
-                <button
-                  onClick={closeCertificate}
-                  className="text-gray-400 hover:text-white transition-colors text-2xl"
-                  aria-label="Close"
+            <DraggableWindow>
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: 'spring', duration: 0.35 }}
+                className="bg-gray-900 rounded-2xl overflow-hidden max-w-6xl w-full max-h-[95vh] shadow-2xl flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div
+                  data-drag-handle
+                  className="flex items-center justify-between px-4 py-3 border-b border-gray-700 cursor-move select-none"
                 >
-                  ✕
-                </button>
-              </div>
+                  <button
+                    onClick={closeCertificate}
+                    className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/90 text-sm transition-colors"
+                  >
+                    ← Back
+                  </button>
 
-              <div className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-3">
-                    Skills Covered
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedCert.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="bg-purple-500/20 text-purple-200 px-3 py-1 rounded-full text-sm"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+                  <div className="min-w-0 px-3">
+                    <h2 className="text-lg sm:text-xl font-bold text-white truncate text-center">
+                      {selectedCert.title}
+                    </h2>
+                    <p className="text-purple-300 text-sm text-center truncate">
+                      {selectedCert.issuer} • {selectedCert.date}
+                    </p>
                   </div>
+
+                  <button
+                    onClick={closeCertificate}
+                    className="text-gray-400 hover:text-white transition-colors text-2xl px-2"
+                    aria-label="Close"
+                    title="Close"
+                  >
+                    ✕
+                  </button>
                 </div>
 
-                <div className="bg-gray-800 rounded-lg overflow-hidden">
-                  <div className="flex items-center justify-between bg-gray-700 px-4 py-2 border-b border-gray-600">
-                    <h4 className="text-lg font-semibold text-white">
-                      Certificate Preview
-                    </h4>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          window.open(selectedCert.pdfUrl, '_blank')
-                        }
-                        className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm transition-all"
-                      >
-                        Open
-                      </button>
-                      <button
-                        onClick={() => downloadCertificate(selectedCert)}
-                        className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm transition-all"
-                      >
-                        Download
-                      </button>
+                <div className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto custom-scrollbar scroll-smooth">
+                  <div className="bg-gray-800 rounded-lg overflow-hidden flex flex-col min-h-[70vh]">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gray-700 px-4 py-3 border-b border-gray-600">
+                      <div className="min-w-0">
+                        <h4 className="text-base sm:text-lg font-semibold text-white">
+                          Certificate Preview
+                        </h4>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {selectedCert.skills.slice(0, 6).map((skill) => (
+                            <span
+                              key={skill}
+                              className="bg-purple-500/20 text-purple-200 px-2.5 py-1 rounded-full text-xs"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                          {selectedCert.skills.length > 6 ? (
+                            <span className="text-xs text-white/60">
+                              +{selectedCert.skills.length - 6} more
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() =>
+                            window.open(selectedCert.pdfUrl, '_blank')
+                          }
+                          className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm transition-all"
+                        >
+                          Open
+                        </button>
+                        <button
+                          onClick={() => downloadCertificate(selectedCert)}
+                          className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded text-sm transition-all"
+                        >
+                          Download
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  <iframe
-                    src={`${selectedCert.pdfUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`}
-                    className="w-full h-[500px] border-0"
-                    title={`${selectedCert.title} Certificate`}
-                  />
+                    <iframe
+                      src={`${selectedCert.pdfUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`}
+                      className="w-full flex-1 min-h-0 border-0"
+                      title={`${selectedCert.title} Certificate`}
+                    />
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </DraggableWindow>
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
+import DraggableWindow from '../../Dragable/dragable';
 
 const SIZE = 9;
 const deepClone = (g) => g.map((r) => r.slice());
@@ -124,52 +125,6 @@ function SudokuCell({
 }
 
 export default function SudokuApp({ onClose }) {
-  const modalRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.no-drag')) return;
-
-    const rect = modalRef.current.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-    setIsDragging(true);
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
-
-    const maxX = window.innerWidth - (modalRef.current?.offsetWidth || 0);
-    const maxY = window.innerHeight - (modalRef.current?.offsetHeight || 0);
-
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY)),
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, dragOffset]);
-
   const base = useMemo(
     () =>
       toGrid(samplePuzzles[Math.floor(Math.random() * samplePuzzles.length)]),
@@ -270,23 +225,12 @@ export default function SudokuApp({ onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 pb-20 z-40">
-      <div
-        ref={modalRef}
-        className="bg-gray-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl mx-auto max-w-[min(90vw,750px)] w-full p-4 select-none"
-        style={{
-          position: 'fixed',
-          left:
-            position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
-          top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
-          transform:
-            position.x === 0 && position.y === 0
-              ? 'translate(-50%, -50%)'
-              : 'none',
-        }}
-        onMouseDown={handleMouseDown}
-      >
+      <DraggableWindow className="bg-gray-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl mx-auto max-w-[min(90vw,750px)] w-full p-4 select-none">
         {/* header */}
-        <div className="mb-3 flex items-center justify-between">
+        <div
+          data-drag-handle
+          className="mb-3 flex items-center justify-between cursor-move select-none"
+        >
           <motion.h1
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -368,33 +312,32 @@ export default function SudokuApp({ onClose }) {
               onClick={hint}
               className="px-2 py-1.5 rounded-lg border border-cyan-400/40 bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-200 no-drag cursor-pointer text-xs"
             >
-              ✨ Hint
+              Hint
             </button>
             <button
               onClick={solve}
               className="px-2 py-1.5 rounded-lg border border-emerald-400/40 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-200 no-drag cursor-pointer text-xs"
             >
-              ✅ Solve
+              Solve
             </button>
             <button
               onClick={resetPuzzle}
               className="px-2 py-1.5 rounded-lg border border-pink-500/40 bg-pink-500/10 hover:bg-pink-500/20 text-pink-100 no-drag cursor-pointer text-xs"
             >
-              ♻ Reset
+              Reset
             </button>
             {done && (
               <div className="mt-1 text-emerald-300 text-xs">
-                ✓ Completed! Nice.
+                Completed! Nice.
               </div>
             )}
           </div>
         </div>
 
         <p className="mt-3 text-xs text-pink-200/70">
-          Tip: use number keys 1–9, Del/Backspace to clear, and **N** to toggle
-          notes.
+          Tip: use number keys 1–9 and Del/Backspace to clear.
         </p>
-      </div>
+      </DraggableWindow>
     </div>
   );
 }

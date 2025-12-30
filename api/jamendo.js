@@ -7,12 +7,12 @@ export default async function handler(req, res) {
   if (!clientId) {
     return res.status(500).json({
       error:
-        'Missing CLIENT_ID. Add CLIENT_ID to your environment variables and redeploy.',
+        'Missing CLIENT_ID.',
     });
   }
 
   const limitRaw = req.query?.limit;
-  const limit = Math.min(200, Math.max(1, Number(limitRaw || 20)));
+  const limit = Math.min(200, Math.max(1, Number(limitRaw || 50)));
 
   const qRaw = req.query?.q;
   const q = typeof qRaw === 'string' ? qRaw.trim() : '';

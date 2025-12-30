@@ -10,7 +10,7 @@ import musicIcon from '../../assets/music.png';
 import certificatesIcon from '../../assets/certificate.png';
 import aiChatbotIcon from '../../assets/cat.png';
 import aboutMeIcon from '../../assets/me.png';
-import contactIcon from '../../assets/contact.png'; // Using settings icon temporarily for contact
+import contactIcon from '../../assets/contact.png';
 
 export default function Desktop({
   wallpaper,
@@ -34,6 +34,7 @@ export default function Desktop({
       {/* Desktop Icons */}
       <div className="absolute top-4 left-4 flex flex-col space-y-4">
         {/* Sudoku Game Icon */}
+
         <motion.div
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
@@ -143,50 +144,6 @@ export default function Desktop({
             Settings
           </span>
         </motion.div>
-
-        {/* Paint App Icon */}
-        <motion.div
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onOpenPaint}
-          className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
-        >
-          <img
-            src={paintIcon}
-            alt="Paint"
-            className="w-12 h-12 mb-1"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              const fallback = e.currentTarget.nextElementSibling;
-              if (fallback) fallback.classList.remove('hidden');
-            }}
-          />
-          <span className="text-white text-xs font-medium text-center drop-shadow-lg">
-            Paint
-          </span>
-        </motion.div>
-
-        {/* Music App Icon */}
-        <motion.div
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onOpenMusic}
-          className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
-        >
-          <img
-            src={musicIcon}
-            alt="Music"
-            className="w-12 h-12 mb-1"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              const fallback = e.currentTarget.nextElementSibling;
-              if (fallback) fallback.classList.remove('hidden');
-            }}
-          />
-          <span className="text-white text-xs font-medium text-center drop-shadow-lg">
-            Music
-          </span>
-        </motion.div>
       </div>
 
       <div className="absolute top-4 left-28 flex flex-col space-y-4">
@@ -290,6 +247,56 @@ export default function Desktop({
           />
           <span className="text-white text-xs font-medium text-center drop-shadow-lg">
             Contact
+          </span>
+        </motion.div>
+
+        {/* Paint App Icon */}
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onOpenPaint}
+          className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
+        >
+          <img
+            src={paintIcon}
+            alt="Paint"
+            className="w-12 h-12 mb-1"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling;
+              if (fallback) fallback.classList.remove('hidden');
+            }}
+          />
+          <span className="text-white text-xs font-medium text-center drop-shadow-lg">
+            Paint
+          </span>
+        </motion.div>
+      </div>
+
+      
+      <div className="absolute top-4 left-52 flex flex-col space-y-4">
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onOpenMusic}
+          className="flex flex-col items-center cursor-pointer p-2 rounded-lg hover:bg-white/20 transition-colors"
+        >
+          <img
+            src={musicIcon}
+            alt="Music"
+            className="w-12 h-12 mb-1"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling;
+              if (fallback) {
+                fallback.style.display = 'flex';
+                fallback.style.alignItems = 'center';
+                fallback.style.justifyContent = 'center';
+              }
+            }}
+          />
+          <span className="text-white text-xs font-medium text-center drop-shadow-lg">
+            Music
           </span>
         </motion.div>
       </div>

@@ -1,63 +1,12 @@
 // components/Games/TicTacToe.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
+import DraggableWindow from '../../Dragable/dragable';
 
 export default function TicTacToe({ onClose }) {
   const [board, setBoard] = useState(Array(9).fill(null));
   const [isXNext, setIsXNext] = useState(true);
-  const modalRef = useRef(null);
-
-  // Dragging states
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const winner = calculateWinner(board);
-
-  // Drag functionality
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.no-drag')) return;
-
-    setIsDragging(true);
-    const rect = modalRef.current.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
-
-    const modal = modalRef.current;
-    if (modal) {
-      const modalRect = modal.getBoundingClientRect();
-      const maxX = window.innerWidth - modalRect.width;
-      const maxY = window.innerHeight - modalRect.height;
-
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY)),
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, dragOffset]);
 
   function handleClick(index) {
     if (board[index] || winner) return;
@@ -74,23 +23,12 @@ export default function TicTacToe({ onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-      <div
-        ref={modalRef}
-        className="bg-gray-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl p-6 max-w-md w-full select-none"
-        style={{
-          position: 'fixed',
-          left:
-            position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
-          top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
-          transform:
-            position.x === 0 && position.y === 0
-              ? 'translate(-50%, -50%)'
-              : 'none',
-        }}
-        onMouseDown={handleMouseDown}
-      >
+      <DraggableWindow className="bg-gray-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl p-6 max-w-md w-full select-none">
         {/* Title bar for dragging */}
-        <div className="flex justify-between items-center mb-4 p-2 rounded bg-gray-800 bg-opacity-50">
+        <div
+          data-drag-handle
+          className="flex justify-between items-center mb-4 p-2 rounded bg-gray-800 bg-opacity-50 cursor-move select-none"
+        >
           <h1 className="text-2xl font-bold text-pink-400 neon-pink">
             Tic Tac Toe
           </h1>
@@ -143,7 +81,7 @@ export default function TicTacToe({ onClose }) {
             Restart Game
           </button>
         </div>
-      </div>
+      </DraggableWindow>
     </div>
   );
 }

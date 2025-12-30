@@ -2,16 +2,17 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
+import DraggableWindow from '../Dragable/dragable';
 
 const ABOUT_POINTS = [
   'Hey, I’m Rishika Gupta from the hills of Darjeeling!!',
-  'Currently juggling my interest in web dev, AI experiments, and cybersecurity rabbit holes but loving it all.',
-  'Doing my BCA at VIT Vellore – surviving exams one coffee at a time.',
-  'Built this website to showcase my skills in web dev, AI and animation',
-  'Outside academics, I keep my grades in check while curating playlists.',
-  'Free time = vibing to music, binge-watching series, and being a part-time singer.',
+  'Currently exploring my interests across development, AI experimentation, and cybersecurity fields that keep me constantly curious and motivated.',
+  'Pursuing my BCA at VIT Vellore and learning to balance academics with passion driven projects.',
+  'Built this website to showcase my work in web development, AI, and interactive animations.',
+  'Outside academics, I stay focused on maintaining strong grades while pursuing creative hobbies.',
+  'In my free time, I enjoy discovering new music, watching series, and hanging out.',
   'I love connecting with new people & open to cool opportunities!!',
-  'Fair warning: I start as an introvert but once comfy, I’ll roast you with love:)',
+  'I may seem reserved at first, but once comfortable, my sense of humor definitely shows.',
 ];
 
 export default function AboutMe({ onClose }) {
@@ -276,9 +277,9 @@ export default function AboutMe({ onClose }) {
         if (e.target === e.currentTarget) onClose?.();
       }}
     >
-      <div
+      <DraggableWindow
         ref={containerRef}
-        className="relative w-full max-w-2xl mx-auto h-[440px] flex items-center justify-center text-center p-6 rounded-2xl overflow-hidden"
+        className="relative w-full max-w-2xl h-[440px] flex items-center justify-center text-center p-6 rounded-2xl overflow-hidden"
         style={{
           background:
             'linear-gradient(180deg, rgba(10,6,18,0.75), rgba(6,2,10,0.65))',
@@ -286,6 +287,12 @@ export default function AboutMe({ onClose }) {
           boxShadow: '0 20px 90px rgba(140, 40, 180, 0.16)',
         }}
       >
+        {/* Drag handle (kept separate from swipeable card) */}
+        <div
+          data-drag-handle
+          className="absolute top-0 left-0 right-0 h-12 z-30 cursor-move select-none"
+        />
+
         {/* Shader canvas background */}
         <canvas
           ref={canvasRef}
@@ -296,7 +303,7 @@ export default function AboutMe({ onClose }) {
         {/* Top-right close */}
         <button
           onClick={() => onClose?.()}
-          className="absolute top-4 right-4 text-gray-300 hover:text-white z-20 p-2 rounded-full bg-black/40 backdrop-blur-sm"
+          className="absolute top-4 right-4 text-gray-300 hover:text-white z-40 p-2 rounded-full bg-black/40 backdrop-blur-sm"
           aria-label="Close about dialog"
         >
           ✕
@@ -388,8 +395,7 @@ export default function AboutMe({ onClose }) {
                     transition={{ delay: 1, duration: 0.5 }}
                   >
                     <p className="text-xs text-white/60 font-light tracking-wide">
-                      Double-click left/right or swipe to navigate • Press ESC
-                      to close
+                      • Double-click left/right swipe or ➡⬅ to navigate •
                     </p>
                   </motion.div>
                 </div>
@@ -397,7 +403,7 @@ export default function AboutMe({ onClose }) {
             </motion.div>
           </AnimatePresence>
         </div>
-      </div>
+      </DraggableWindow>
     </div>
   );
 }

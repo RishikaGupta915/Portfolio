@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import DraggableWindow from '../../Dragable/dragable';
 
 const gridSize = 15;
 const tileCount = 16;
@@ -11,67 +12,12 @@ const SnakeGame = ({ onClose }) => {
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
 
-  // Dragging states
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
   // Customization states
   const [snakeColor, setSnakeColor] = useState('#ff66cc'); // default pink
   const [fruitType, setFruitType] = useState('🍒');
-  const [background, setBackground] = useState(
-    'linear-gradient(135deg, #0f0c29, #302b63, #ff0080)'
-  );
+  const [background, setBackground] = useState();
 
   const canvasRef = useRef(null);
-  const modalRef = useRef(null);
-
-  // Drag functionality
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.no-drag')) return; // Skip dragging for interactive elements
-
-    setIsDragging(true);
-    const rect = modalRef.current.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
-
-    // Keep modal within viewport bounds
-    const modal = modalRef.current;
-    if (modal) {
-      const modalRect = modal.getBoundingClientRect();
-      const maxX = window.innerWidth - modalRect.width;
-      const maxY = window.innerHeight - modalRect.height;
-
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY)),
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, dragOffset]);
 
   // Sound effect function
   const playSound = (frequency, duration = 100) => {
@@ -210,7 +156,7 @@ const SnakeGame = ({ onClose }) => {
       ctx.stroke();
     }
 
-    // Draw snake with enhanced graphics
+    // Draw snake
     snake.forEach((segment, index) => {
       const x = segment.x * gridSize;
       const y = segment.y * gridSize;
@@ -246,7 +192,7 @@ const SnakeGame = ({ onClose }) => {
         ctx.fillRect(x + 5, y + 5, 1, 1);
         ctx.fillRect(x + gridSize - 6, y + 5, 1, 1);
       } else {
-        // Body segments - gradient effect
+        // Body segments
         const opacity = Math.max(0.3, 1 - index * 0.05);
         segmentGradient.addColorStop(
           0,
@@ -288,13 +234,9 @@ const SnakeGame = ({ onClose }) => {
       ctx.strokeRect(x + 1, y + 1, gridSize - 2, gridSize - 2);
     });
 
-    // Draw fruit with glow effect
+    // Draw fruit
     const fruitX = fruit.x * gridSize;
     const fruitY = fruit.y * gridSize;
-
-    // Glow effect for fruit
-    ctx.shadowColor = '#ffff00';
-    ctx.shadowBlur = 15;
 
     // Draw fruit background circle
     ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
@@ -324,25 +266,14 @@ const SnakeGame = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div
-        ref={modalRef}
-        className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg p-3 max-w-sm w-full mx-4 relative shadow-2xl border border-gray-700 cursor-move select-none"
-        style={{
-          position: 'fixed',
-          left:
-            position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
-          top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
-          transform:
-            position.x === 0 && position.y === 0
-              ? 'translate(-50%, -50%)'
-              : 'none',
-        }}
-        onMouseDown={handleMouseDown}
-      >
+      <DraggableWindow className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg p-3 max-w-sm w-full mx-4 relative shadow-2xl border border-gray-700 select-none">
         {/* Title bar for dragging */}
-        <div className="flex items-center justify-between mb-2 p-1 rounded bg-gray-800 bg-opacity-50">
+        <div
+          data-drag-handle
+          className="flex items-center justify-between mb-2 p-1 rounded bg-gray-800 bg-opacity-50 cursor-move select-none"
+        >
           <h1 className="text-sm font-bold bg-gradient-to-r from-pink-400 to-purple-600 bg-clip-text text-transparent">
-            Snake 🐍
+            Snake
           </h1>
           <button
             onClick={onClose}
@@ -392,7 +323,7 @@ const SnakeGame = ({ onClose }) => {
                   playSound(600, 100); // Game start sound
                 }}
               >
-                🚀 Start
+                Start
               </button>
               <div className="mt-2 p-2 bg-gray-800 rounded border border-gray-600 max-w-xs">
                 <p className="text-xs text-gray-300 mb-1">
@@ -412,7 +343,7 @@ const SnakeGame = ({ onClose }) => {
             <div className="text-center no-drag">
               <div className="bg-red-900 bg-opacity-30 border border-red-500 rounded p-3 mb-2">
                 <h2 className="text-lg text-red-400 font-bold mb-1">
-                  Game Over! 💀
+                  Game Over!
                 </h2>
                 <p className="text-xs text-gray-300">
                   Score:{' '}
@@ -435,7 +366,7 @@ const SnakeGame = ({ onClose }) => {
                   playSound(600, 100); // Restart sound
                 }}
               >
-                🔄 Restart
+                Restart
               </button>
             </div>
           )}
@@ -443,12 +374,12 @@ const SnakeGame = ({ onClose }) => {
           {/* Customization options */}
           <div className="mt-3 w-full no-drag">
             <h3 className="text-sm font-bold text-center mb-2 text-gray-200">
-              🎨 Customize
+              Customize
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-800 p-2 rounded border border-gray-600">
                 <h4 className="mb-1 font-semibold text-pink-400 text-center text-xs">
-                  🐍 Color
+                  Color
                 </h4>
                 <div className="flex justify-center">
                   <input
@@ -462,7 +393,7 @@ const SnakeGame = ({ onClose }) => {
 
               <div className="bg-gray-800 p-2 rounded border border-gray-600">
                 <h4 className="mb-1 font-semibold text-green-400 text-center text-xs">
-                  🍎 Fruit
+                  Fruit
                 </h4>
                 <select
                   value={fruitType}
@@ -480,7 +411,7 @@ const SnakeGame = ({ onClose }) => {
             </div>
           </div>
         </div>
-      </div>
+      </DraggableWindow>
     </div>
   );
 };

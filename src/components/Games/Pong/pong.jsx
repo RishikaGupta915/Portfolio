@@ -1,9 +1,9 @@
+import DraggableWindow from '../../Dragable/dragable';
 import React, { useRef, useEffect, useState } from 'react';
 
 export default function PongGame({ onClose }) {
   const canvasRef = useRef(null);
   const canvasWrapRef = useRef(null);
-  const modalRef = useRef(null);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -18,11 +18,6 @@ export default function PongGame({ onClose }) {
   const paddleXRef = useRef((BASE_W - 100) / 2);
   const ballRef = useRef({ x: BASE_W / 2, y: BASE_H - 30, dx: 2, dy: -2 });
   const pressedRef = useRef({ left: false, right: false });
-
-  // Dragging states
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const restartGame = () => {
     setScore(0);
@@ -78,48 +73,6 @@ export default function PongGame({ onClose }) {
       window.removeEventListener('resize', onWinResize);
     };
   }, []);
-
-  // Drag functionality
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.no-drag')) return;
-    setIsDragging(true);
-    const rect = modalRef.current?.getBoundingClientRect();
-    if (rect) {
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
-    }
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
-    const modal = modalRef.current;
-    if (modal) {
-      const modalRect = modal.getBoundingClientRect();
-      const maxX = window.innerWidth - modalRect.width;
-      const maxY = window.innerHeight - modalRect.height;
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY)),
-      });
-    }
-  };
-
-  const handleMouseUp = () => setIsDragging(false);
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, dragOffset]);
 
   // Simple beep function for sound effects
   const playSound = (frequency, duration = 100) => {
@@ -271,23 +224,12 @@ export default function PongGame({ onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div
-        ref={modalRef}
-        className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg p-4 max-w-lg w-full mx-4 relative shadow-2xl border border-gray-700 select-none"
-        style={{
-          position: 'fixed',
-          left:
-            position.x === 0 && position.y === 0 ? '50%' : `${position.x}px`,
-          top: position.y === 0 && position.y === 0 ? '50%' : `${position.y}px`,
-          transform:
-            position.x === 0 && position.y === 0
-              ? 'translate(-50%, -50%)'
-              : 'none',
-        }}
-        onMouseDown={handleMouseDown}
-      >
-        <div className="flex items-center justify-between mb-3 p-2 rounded bg-gray-800 bg-opacity-50">
-          <h2 className="text-white text-lg font-bold">⚾ Pong</h2>
+      <DraggableWindow className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg p-4 max-w-lg w-full mx-4 relative shadow-2xl border border-gray-700 select-none">
+        <div
+          data-drag-handle
+          className="flex items-center justify-between mb-3 p-2 rounded bg-gray-800 bg-opacity-50 cursor-move select-none"
+        >
+          <h2 className="text-white text-lg font-bold">Pong</h2>
           <button
             onClick={onClose}
             className="no-drag text-gray-400 hover:text-red-400 text-sm font-bold transition-colors duration-200 px-2 py-1 hover:bg-gray-700 rounded"
@@ -298,7 +240,7 @@ export default function PongGame({ onClose }) {
 
         <div className="flex flex-col items-center">
           <p className="text-gray-300 text-sm mb-3 text-center">
-            Use arrow keys to move the paddle. Keep the ball alive!
+            Use ← → arrow keys to move the paddle. Keep the ball alive!
           </p>
 
           <div ref={canvasWrapRef} className="w-full">
@@ -340,11 +282,9 @@ export default function PongGame({ onClose }) {
                 </button>
               </div>
             )}
-
-            <p className="text-gray-400 text-sm mt-2">← → Arrow keys to move</p>
           </div>
         </div>
-      </div>
+      </DraggableWindow>
     </div>
   );
 }
