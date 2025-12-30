@@ -191,7 +191,7 @@ export default function AIBrowser({ onClose }) {
     setMessages([
       {
         type: 'ai',
-        content: "Hello! I'm your AI assistant. Ask me anything!",
+        content: "Hello! I'm your AI assistant. Ask me anything about the owner and their resume or anything in general!",
         timestamp: new Date().toISOString(),
       },
     ]);
