@@ -1,5 +1,6 @@
 import express from 'express';
 import fetch from 'node-fetch';
+import PROFILE_CONTEXT from '../../../shared/aiProfile.js';
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.post('/ask', async (req, res) => {
     }
 
     // Choose model
-    const chosenModel = 'llama-3.1-8b-instant';
+    const chosenModel = 'llama-3.3-70b-versatile';
 
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
@@ -41,12 +42,16 @@ router.post('/ask', async (req, res) => {
           {
             role: 'system',
             content:
-              "You are Rishika's assistant AI helping the users with any question they ask. Be helpful, friendly, and professional. Keep responses concise but informative.",
+              "You are an assistant for Rishika Gupta's portfolio website. If the user asks about Rishika/the owner/the portfolio (including skills, projects, education, contact), answer from the provided Owner Profile. Do not ask the user for who Rishika is. If the profile lacks a detail, say you don't know.",
+          },
+          {
+            role: 'system',
+            content: PROFILE_CONTEXT(),
           },
           { role: 'user', content: question.trim() },
         ],
         max_tokens: 512,
-        temperature: 0.7,
+        temperature: 0.3,
         top_p: 1,
         stream: false,
       }),

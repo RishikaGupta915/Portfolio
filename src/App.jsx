@@ -66,6 +66,57 @@ function App() {
     wallpaper4,
   ];
 
+  const enterFullscreen = async () => {
+    try {
+      if (typeof document === 'undefined') return;
+      if (document.fullscreenElement) return;
+
+      const el = document.documentElement;
+      if (!el || typeof el.requestFullscreen !== 'function') return;
+      await el.requestFullscreen();
+    } catch {
+      // Some browsers block fullscreen without a user gesture.
+    }
+  };
+
+  const exitFullscreen = async () => {
+    try {
+      if (typeof document === 'undefined') return;
+      if (!document.fullscreenElement) return;
+      if (typeof document.exitFullscreen !== 'function') return;
+      await document.exitFullscreen();
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    // Best-effort attempt on load + fallback to first interaction.
+    enterFullscreen();
+
+    const onFirstInteraction = () => {
+      enterFullscreen();
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        exitFullscreen();
+      }
+    };
+
+    document.addEventListener('pointerdown', onFirstInteraction, {
+      once: true,
+      passive: true,
+    });
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', onFirstInteraction);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (
       typeof window === 'undefined' ||
@@ -311,7 +362,11 @@ function App() {
           className="fixed inset-0 z-[9999] bg-black"
           role="button"
           aria-label="Tap to enter"
-          onClick={() => setMobileGateDismissed(true)}
+          onClick={() => {
+            // Fullscreen is most reliably allowed on a direct user gesture.
+            enterFullscreen();
+            setMobileGateDismissed(true);
+          }}
         >
           <img
             src={mobileOverlay}

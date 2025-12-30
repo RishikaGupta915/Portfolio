@@ -2,6 +2,41 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import DraggableWindow from '../Dragable/dragable';
+import resumePdf from '../../assets/Resume_RishikaGupta.pdf';
+
+function isResumeRequest(text) {
+  const q = String(text || '').toLowerCase();
+  return (
+    q.includes('resume') || q.includes('cv') || q.includes('curriculum vitae')
+  );
+}
+
+function renderTextWithLinks(text) {
+  const raw = String(text ?? '');
+  const urlRegex = /(https?:\/\/[^\s]+|\/[^\s]+\.pdf)/g;
+  const parts = raw.split(urlRegex);
+
+  return parts.map((part, idx) => {
+    const isLink = urlRegex.test(part);
+    // Reset regex state because of .test on global regex
+    urlRegex.lastIndex = 0;
+
+    if (!isLink) return <span key={idx}>{part}</span>;
+
+    const href = part;
+    return (
+      <a
+        key={idx}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline text-purple-200 hover:text-white"
+      >
+        {part}
+      </a>
+    );
+  });
+}
 
 export default function AIBrowser({ onClose }) {
   const API_BASE = import.meta.env.VITE_API_BASE || '';
@@ -9,7 +44,7 @@ export default function AIBrowser({ onClose }) {
   const [messages, setMessages] = useState([
     {
       type: 'ai',
-      content: "Hello! I'm your AI assistant. Ask me anything!",
+      content: "Hello! I'm your AI assistant. Ask me anything about the owner and their resume or anything in general!",
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -73,6 +108,26 @@ export default function AIBrowser({ onClose }) {
 
   const askAI = async () => {
     if (!question.trim()) return;
+
+    if (isResumeRequest(question)) {
+      const userMessage = {
+        type: 'user',
+        content: question,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+      setQuestion('');
+      setIsLoading(false);
+      setIsConnected(true);
+
+      const aiMessage = {
+        type: 'ai',
+        content: `Here is Rishika's resume (click to open): ${resumePdf}`,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      return;
+    }
 
     const userMessage = {
       type: 'user',
@@ -239,7 +294,9 @@ export default function AIBrowser({ onClose }) {
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <p className="whitespace-pre-wrap">
+                          {renderTextWithLinks(message.content)}
+                        </p>
                         <div className="text-xs opacity-60 mt-2">
                           {new Date(message.timestamp).toLocaleTimeString()}
                         </div>

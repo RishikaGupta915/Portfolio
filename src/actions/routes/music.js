@@ -3,19 +3,19 @@ import fetch from 'node-fetch';
 
 const router = express.Router();
 
-// Jamendo proxy (keeps CLIENT_ID on server)
+// Jamendo proxy 
 router.get('/jamendo', async (req, res) => {
   try {
     const clientId = process.env.CLIENT_ID;
     if (!clientId) {
       return res.status(500).json({
         error:
-          'Missing CLIENT_ID. Add CLIENT_ID to your server environment variables.',
+          'Missing CLIENT_ID.',
       });
     }
 
     const limitRaw = req.query?.limit;
-    const limit = Math.min(200, Math.max(1, Number(limitRaw || 20)));
+    const limit = Math.min(200, Math.max(1, Number(limitRaw || 50)));
     const qRaw = req.query?.q;
     const q = typeof qRaw === 'string' ? qRaw.trim() : '';
 

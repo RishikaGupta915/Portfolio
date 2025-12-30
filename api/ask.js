@@ -1,3 +1,5 @@
+import PROFILE_CONTEXT from '../shared/aiProfile.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -17,8 +19,7 @@ export default async function handler(req, res) {
 
     if (!groqKey) {
       return res.status(500).json({
-        error:
-          'Missing GROQ_API_KEY.',
+        error: 'Missing GROQ_API_KEY.',
       });
     }
 
@@ -38,7 +39,11 @@ export default async function handler(req, res) {
             {
               role: 'system',
               content:
-                'You are a helpful, friendly assistant. Answer the user clearly and concisely.',
+                "You are an assistant for Rishika Gupta's portfolio website. If the user asks about Rishika/the owner/the portfolio (including skills, projects, education, contact), answer from the provided Owner Profile. Do not ask who Rishika is. If the profile lacks a detail, say you don't know.",
+            },
+            {
+              role: 'system',
+              content: PROFILE_CONTEXT(),
             },
             { role: 'user', content: question },
           ],
