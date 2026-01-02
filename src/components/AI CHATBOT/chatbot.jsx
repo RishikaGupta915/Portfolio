@@ -44,7 +44,8 @@ export default function AIBrowser({ onClose }) {
   const [messages, setMessages] = useState([
     {
       type: 'ai',
-      content: "Hello! I'm your AI assistant. Ask me anything about the owner and their resume or anything in general!",
+      content:
+        "Hello! I'm your AI assistant. Ask me anything about the owner and their resume or anything in general!",
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -155,11 +156,24 @@ export default function AIBrowser({ onClose }) {
       const data = await res.json();
       console.log('API response data:', data);
 
+      const isError = !!(
+        data?.error ||
+        data?.success === false ||
+        (typeof data?.upstreamStatus === 'number' && data.upstreamStatus >= 400)
+      );
+
+      let content = data?.answer || "Sorry, I couldn't process your request.";
+
+      if (data?.upstreamMessage && data?.upstreamStatus) {
+        const code = data?.upstreamCode ? ` (${data.upstreamCode})` : '';
+        content = `${content}\n\n[AI status: ${data.upstreamStatus}${code}]`;
+      }
+
       const aiMessage = {
         type: 'ai',
-        content: data.answer || "Sorry, I couldn't process your request.",
+        content,
         timestamp: new Date().toISOString(),
-        error: data.error ? true : false,
+        error: isError,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -169,7 +183,7 @@ export default function AIBrowser({ onClose }) {
       const errorMessage = {
         type: 'ai',
         content:
-          "Connection failed. Please make sure you're running 'vercel dev' and try again.",
+          "Connection failed. Start the backend + frontend with 'npm run dev:full' and try again.",
         timestamp: new Date().toISOString(),
         error: true,
       };
@@ -191,7 +205,8 @@ export default function AIBrowser({ onClose }) {
     setMessages([
       {
         type: 'ai',
-        content: "Hello! I'm your AI assistant. Ask me anything about the owner and their resume or anything in general!",
+        content:
+          "Hello! I'm your AI assistant. Ask me anything about the owner and their resume or anything in general!",
         timestamp: new Date().toISOString(),
       },
     ]);

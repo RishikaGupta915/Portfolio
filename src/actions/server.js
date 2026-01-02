@@ -33,7 +33,9 @@ const healthPayload = () => ({
   status: 'OK',
   message: 'Server is running',
   timestamp: new Date().toISOString(),
-  groqApiConfigured: !!process.env.GROQ_API_KEY,
+  geminiApiConfigured: !!(
+    process.env.GEMINI_API_KEY
+  ),
   port: PORT,
 });
 
@@ -42,14 +44,22 @@ app.get('/health', (req, res) => {
     status: 'OK',
     message: 'Server is running ',
     timestamp: new Date().toISOString(),
-    groqApiConfigured: !!process.env.GROQ_API_KEY,
+    geminiApiConfigured: !!(
+      process.env.GEMINI_API_KEY 
+    ),
     port: PORT,
   };
   res.json(status);
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    geminiApiConfigured: !!(
+      process.env.GEMINI_API_KEY 
+    ),
+  });
 });
 
 // Mount feature routes
@@ -72,7 +82,11 @@ app.listen(PORT, () => {
   console.log(`Chat → http://localhost:${PORT}/api/ask`);
   console.log(`Music → http://localhost:${PORT}/api/jamendo`);
   console.log(
-    `Groq API Key: ${process.env.GROQ_API_KEY ? 'Configured' : 'Missing'}`
+    `Gemini API Key: ${
+      process.env.GEMINI_API_KEY 
+        ? 'Configured'
+        : 'Missing'
+    }`
   );
   console.log(`CORS enabled for frontend development`);
 });
