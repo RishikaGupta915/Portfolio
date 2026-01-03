@@ -5,14 +5,12 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import DraggableWindow from '../Dragable/dragable';
 
 const ABOUT_POINTS = [
-  'Hey, I’m Rishika Gupta from the hills of Darjeeling!!',
-  'Currently exploring my interests across development, AI experimentation, and cybersecurity fields that keep me constantly curious and motivated.',
-  'Pursuing my BCA at VIT Vellore and learning to balance academics with passion driven projects.',
-  'Built this website to showcase my work in web development, AI, and interactive animations.',
-  'Outside academics, I stay focused on maintaining strong grades while pursuing creative hobbies.',
-  'In my free time, I enjoy discovering new music, watching series, and hanging out.',
+  'Hey, I’m Rishika Gupta',
+  'Pursuing my BCA at VIT Vellore.',
+  'Currently focused on developing projects across development, AI experimentation and cybersecurity fields which enhance my professional growth and curiosity.',
+  'I stay focused on maintaining strong grades while pursuing creative hobbies.',
+  'In my free time, I enjoy doing MUNs and debates, singing and hanging out.',
   'I love connecting with new people & open to cool opportunities!!',
-  'I may seem reserved at first, but once comfortable, my sense of humor definitely shows.',
 ];
 
 export default function AboutMe({ onClose }) {

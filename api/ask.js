@@ -1,7 +1,8 @@
 import PROFILE_CONTEXT from '../shared/aiProfile.js';
 
 const GEMINI_API_HOST_V1 = 'https://generativelanguage.googleapis.com/v1';
-const GEMINI_API_HOST_V1BETA = 'https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_API_HOST_V1BETA =
+  'https://generativelanguage.googleapis.com/v1beta';
 
 function getLocalISODate() {
   const now = new Date();
@@ -68,7 +69,14 @@ function pickSupportedModel(models) {
   );
 }
 
-async function callGemini({ apiHost, geminiKey, model, systemInstruction, userText, temperature }) {
+async function callGemini({
+  apiHost,
+  geminiKey,
+  model,
+  systemInstruction,
+  userText,
+  temperature,
+}) {
   const url = `${apiHost}/models/${encodeURIComponent(
     model
   )}:generateContent?key=${encodeURIComponent(geminiKey)}`;
@@ -178,7 +186,8 @@ export default async function handler(req, res) {
             upstreamMessage: body?.error?.message,
             requestId,
             modelUsed,
-            apiVersionUsed: apiHostUsed === GEMINI_API_HOST_V1BETA ? 'v1beta' : 'v1',
+            apiVersionUsed:
+              apiHostUsed === GEMINI_API_HOST_V1BETA ? 'v1beta' : 'v1',
             answer:
               body?.error?.message ||
               "Sorry, I'm having trouble connecting to the AI service.",
@@ -195,7 +204,8 @@ export default async function handler(req, res) {
           upstreamMessage: body?.error?.message,
           requestId,
           modelUsed,
-          apiVersionUsed: apiHostUsed === GEMINI_API_HOST_V1BETA ? 'v1beta' : 'v1',
+          apiVersionUsed:
+            apiHostUsed === GEMINI_API_HOST_V1BETA ? 'v1beta' : 'v1',
           answer:
             body?.error?.message ||
             "Sorry, I'm having trouble connecting to the AI service.",
@@ -219,7 +229,8 @@ export default async function handler(req, res) {
         upstreamMessage: data?.error?.message,
         requestId,
         modelUsed,
-        apiVersionUsed: apiHostUsed === GEMINI_API_HOST_V1BETA ? 'v1beta' : 'v1',
+        apiVersionUsed:
+          apiHostUsed === GEMINI_API_HOST_V1BETA ? 'v1beta' : 'v1',
         answer:
           data?.error?.message ||
           "Sorry, I'm having trouble connecting to the AI service.",

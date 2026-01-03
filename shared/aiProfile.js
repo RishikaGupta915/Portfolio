@@ -37,7 +37,7 @@ Skills:
 
 Projects (highlights):
 - Portfolio Website: a Windows-inspired website (React, JavaScript, Tailwind, GSAP)
-- Cryptic Hunt App: a leaderboard app for a college event (React Native, Firebase)
+- Cryptic Hunt App: a leaderboard app for a college event (React Native, Prisma)
 
 Experience:
 - No professional experience yet

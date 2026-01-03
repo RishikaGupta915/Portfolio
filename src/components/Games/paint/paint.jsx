@@ -28,6 +28,7 @@ export default function PaintApp({ onClose }) {
   // Drawing state (refs to avoid rerendering on every mousemove)
   const isDrawingRef = useRef(false);
   const startPosRef = useRef(null);
+  const lastPosRef = useRef(null);
 
   // Pan (hand tool)
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });

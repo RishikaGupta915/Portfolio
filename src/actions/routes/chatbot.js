@@ -5,7 +5,8 @@ import PROFILE_CONTEXT from '../../../shared/aiProfile.js';
 const router = express.Router();
 
 const GEMINI_API_HOST_V1 = 'https://generativelanguage.googleapis.com/v1';
-const GEMINI_API_HOST_V1BETA = 'https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_API_HOST_V1BETA =
+  'https://generativelanguage.googleapis.com/v1beta';
 
 const MODEL_CACHE_TTL_MS = 5 * 60 * 1000;
 let cachedModelList = null;
@@ -72,7 +73,13 @@ function getLocalISODate() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-async function callGemini({ apiHost, geminiKey, model, systemInstruction, userText }) {
+async function callGemini({
+  apiHost,
+  geminiKey,
+  model,
+  systemInstruction,
+  userText,
+}) {
   const url = `${apiHost}/models/${encodeURIComponent(
     model
   )}:generateContent?key=${encodeURIComponent(geminiKey)}`;
@@ -187,12 +194,18 @@ router.post('/ask', async (req, res) => {
             listModelsError = undefined;
             break;
           } catch (e) {
-            listModelsError = `ListModels failed on ${attempt.label}: ${e?.message || String(e)}`;
+            listModelsError = `ListModels failed on ${attempt.label}: ${
+              e?.message || String(e)
+            }`;
           }
         }
 
         // If we couldn't retry successfully, attach ListModels failure info for easier debugging.
-        if (listModelsError && prefetchedErrorBody && typeof prefetchedErrorBody.raw === 'object') {
+        if (
+          listModelsError &&
+          prefetchedErrorBody &&
+          typeof prefetchedErrorBody.raw === 'object'
+        ) {
           prefetchedErrorBody.raw = {
             ...prefetchedErrorBody.raw,
             _listModelsError: listModelsError,
@@ -243,7 +256,8 @@ router.post('/ask', async (req, res) => {
         upstreamMessage,
         answer: upstreamMessage || errorMessage,
         modelUsed,
-        apiVersionUsed: apiHostUsed === GEMINI_API_HOST_V1BETA ? 'v1beta' : 'v1',
+        apiVersionUsed:
+          apiHostUsed === GEMINI_API_HOST_V1BETA ? 'v1beta' : 'v1',
         timestamp: new Date().toISOString(),
       });
     }

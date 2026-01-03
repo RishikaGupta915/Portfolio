@@ -51,7 +51,7 @@ a {
 input,
 textarea,
 select {
-  cursor: text !important;
+  cursor: pointer !important;
 }
 
 html,

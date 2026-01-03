@@ -65,8 +65,8 @@ export default function App() {
       'body, body * { cursor: var(--app-cursor, auto) !important; }',
       // Always show pointer
       'a, a *, button, button *, [role="button"], [role="button"] *, [role="link"], [role="link"] *, .cursor-pointer, .cursor-pointer * { cursor: pointer !important; }',
-      // Keep text cursor for inputs
-      'input, textarea, select { cursor: text !important; }',
+      // Force pointer cursor even on text fields
+      'input, textarea, select { cursor: pointer !important; }',
     ].join('\n');
 
     let style = document.getElementById(styleId);
