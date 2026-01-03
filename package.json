@@ -13,6 +13,7 @@
     "dev:full": "concurrently \"npm run server\" \"npm run dev\""
   },
   "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
     "ai": "^5.0.44",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
@@ -23,7 +24,8 @@
     "motion": "^12.23.12",
     "node-fetch": "^3.3.2",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",

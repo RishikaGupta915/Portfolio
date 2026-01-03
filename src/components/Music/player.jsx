@@ -64,6 +64,13 @@ function buildPlaylistTracks() {
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
+function getYouTubeId(url) {
+  const reg =
+    /(?:youtube\.com.*(?:v=|\/embed\/|\/v\/)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = url.match(reg);
+  return match ? match[1] : null;
+}
+
 export default function MusicPlayer({
   isOpen,
   onClose,
@@ -74,14 +81,6 @@ export default function MusicPlayer({
   const handleEndedRef = useRef(() => {});
 
   const playlistTracks = useMemo(() => buildPlaylistTracks(), []);
-
-  const [activeTab, setActiveTab] = useState(
-    playlistTracks.length > 0 ? 'playlist' : 'discover'
-  );
-
-  const [tracks, setTracks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   const [currentTrackId, setCurrentTrackId] = useState(null);
 
@@ -94,6 +93,10 @@ export default function MusicPlayer({
   const [isShuffle, setIsShuffle] = useState(false);
   const [loopMode, setLoopMode] = useState('off'); // off | all | one
 
+  const [ytUrlInput, setYtUrlInput] = useState('');
+  const [ytTracks, setYtTracks] = useState([]);
+  const [ytThumbnail, setYtThumbnail] = useState(null);
+
   const formatTime = (sec) => {
     const s = Number.isFinite(sec) ? Math.max(0, sec) : 0;
     const m = Math.floor(s / 60);
@@ -105,6 +108,8 @@ export default function MusicPlayer({
     if (!currentTrackId) return null;
 
     const id = String(currentTrackId);
+
+    // Local playlist track
     if (id.startsWith('pl:')) {
       const t = playlistTracks.find((x) => x.id === id);
       return t
@@ -112,57 +117,69 @@ export default function MusicPlayer({
         : { title: 'Unknown track', subtitle: '', source: 'playlist' };
     }
 
-    if (id.startsWith('jm:')) {
-      const jamId = id.slice(3);
-      const t = tracks.find((x) => String(x.id) === jamId);
+    // YouTube track
+    if (id.startsWith('yt:')) {
+      const t = ytTracks.find((x) => x.id === id);
       return t
-        ? { title: t.name, subtitle: t.artist_name || '', source: 'discover' }
-        : { title: 'Unknown track', subtitle: '', source: 'discover' };
+        ? {
+            title: t.title,
+            subtitle: t.subtitle,
+            source: 'youtube',
+            thumbnail: t.thumbnail,
+          }
+        : {
+            title: 'YouTube Stream',
+            subtitle: id.replace('yt:', ''),
+            source: 'youtube',
+            thumbnail: ytThumbnail,
+          };
     }
 
     return null;
-  }, [currentTrackId, playlistTracks, tracks]);
+  }, [currentTrackId, playlistTracks, ytTracks]);
 
-  const loadDiscover = async () => {
-    await loadTracks();
-  };
-
-  const loadTracks = async ({ q } = {}) => {
-    setLoading(true);
-    setError('');
+  const handlePlayYouTube = async () => {
+    if (!ytUrlInput) return;
 
     try {
-      const params = new URLSearchParams({ limit: '200' });
-      const qValue = typeof q === 'string' ? q.trim() : '';
-      if (qValue) params.set('q', qValue);
+      const r = await fetch('http://localhost:5000/api/music/getAudio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: ytUrlInput }),
+      });
 
-      const res = await fetch(`/api/jamendo?${params.toString()}`);
-      const data = await res.json();
+      const data = await r.json();
+      if (!data.audioUrl) return;
 
-      if (!res.ok) {
-        setTracks([]);
-        setError(
-          data?.error ||
-            'Failed to load discover. Make sure CLIENT_ID is set on the server.'
-        );
-        setLoading(false);
-        return;
-      }
+      const id = 'yt:' + ytUrlInput;
+      const videoId = getYouTubeId(ytUrlInput);
 
-      const results = Array.isArray(data?.results) ? data.results : [];
-      setTracks(results);
-      setLoading(false);
+      // Pick best thumbnail
+      const thumb = videoId
+        ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+        : null;
+
+      setYtThumbnail(thumb);
+
+      setYtTracks([
+        {
+          id,
+          title: 'YouTube Stream',
+          subtitle: ytUrlInput,
+          url: data.audioUrl,
+          thumbnail: thumb,
+          source: 'youtube',
+        },
+      ]);
+
+      await playUrl({
+        id,
+        url: data.audioUrl,
+      });
     } catch {
-      setTracks([]);
-      setLoading(false);
-      setError('Failed to load discover.');
+      console.log('Failed to play YouTube');
     }
   };
-
-  useEffect(() => {
-    loadDiscover();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     // If the window is closed and background playback is NOT allowed, stop audio.
@@ -227,23 +244,9 @@ export default function MusicPlayer({
   }, [volume]);
 
   const getPlaybackContext = () => {
-    if (!currentTrackId) {
-      return { source: null, list: [], index: -1 };
-    }
-
-    const id = String(currentTrackId);
-    if (id.startsWith('pl:')) {
-      const index = playlistTracks.findIndex((x) => String(x.id) === id);
-      return { source: 'playlist', list: playlistTracks, index };
-    }
-
-    if (id.startsWith('jm:')) {
-      const jamId = id.slice(3);
-      const index = tracks.findIndex((x) => String(x.id) === jamId);
-      return { source: 'discover', list: tracks, index };
-    }
-
-    return { source: null, list: [], index: -1 };
+    const all = [...playlistTracks, ...ytTracks];
+    const index = all.findIndex((x) => String(x.id) === String(currentTrackId));
+    return { list: all, index };
   };
 
   const playUrl = async ({ id, url }) => {
@@ -255,10 +258,12 @@ export default function MusicPlayer({
       audioRef.current.src = url;
     }
 
-    try {
-      await audioRef.current.play();
-    } catch {
-      // Autoplay restrictions can block; user can press play in controls.
+    // Attempt play only after user-triggered action
+    const playAttempt = audioRef.current.play();
+    if (playAttempt !== undefined) {
+      playAttempt.catch(() => {
+        console.log('Autoplay blocked — waiting for user click');
+      });
     }
   };
 
@@ -266,42 +271,24 @@ export default function MusicPlayer({
     await playUrl({ id: t.id, url: t.url });
   };
 
-  const playJamendo = async (t) => {
-    const nextUrl = t.audio || t.audiodownload || '';
-    await playUrl({ id: `jm:${t.id}`, url: nextUrl });
-  };
-
   const currentIndex = useMemo(() => {
     return getPlaybackContext().index;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrackId, playlistTracks, tracks]);
+  }, [currentTrackId, playlistTracks, ytTracks]);
+
+  const ctx = useMemo(
+    () => getPlaybackContext(),
+    [currentTrackId, playlistTracks, ytTracks]
+  );
 
   const playPrev = async () => {
-    const ctx = getPlaybackContext();
     if (ctx.index <= 0) return;
-    if (ctx.source === 'playlist') {
-      await playPlaylist(playlistTracks[ctx.index - 1]);
-      return;
-    }
-    if (ctx.source === 'discover') {
-      await playJamendo(tracks[ctx.index - 1]);
-    }
+    await playPlaylist(ctx.list[ctx.index - 1]);
   };
 
   const playNext = async () => {
-    const ctx = getPlaybackContext();
     if (ctx.index < 0) return;
-
-    if (ctx.source === 'playlist') {
-      if (ctx.index >= playlistTracks.length - 1) return;
-      await playPlaylist(playlistTracks[ctx.index + 1]);
-      return;
-    }
-
-    if (ctx.source === 'discover') {
-      if (ctx.index >= tracks.length - 1) return;
-      await playJamendo(tracks[ctx.index + 1]);
-    }
+    if (ctx.index >= ctx.list.length - 1) return;
+    await playPlaylist(ctx.list[ctx.index + 1]);
   };
 
   useEffect(() => {
@@ -318,8 +305,8 @@ export default function MusicPlayer({
       if (isShuffle) {
         if (ctx.list.length === 1) {
           // With 1 track, behave like loop all to avoid stopping immediately.
-          if (ctx.source === 'playlist') await playPlaylist(playlistTracks[0]);
-          if (ctx.source === 'discover') await playJamendo(tracks[0]);
+          await playPlaylist(ctx.list[0]);
+
           return;
         }
 
@@ -328,13 +315,7 @@ export default function MusicPlayer({
           nextIndex = Math.floor(Math.random() * ctx.list.length);
         }
 
-        if (ctx.source === 'playlist') {
-          await playPlaylist(playlistTracks[nextIndex]);
-          return;
-        }
-        if (ctx.source === 'discover') {
-          await playJamendo(tracks[nextIndex]);
-        }
+        await playPlaylist(ctx.list[nextIndex]);
         return;
       }
 
@@ -342,21 +323,14 @@ export default function MusicPlayer({
       const atEnd = ctx.index >= ctx.list.length - 1;
       if (atEnd) {
         if (loopMode !== 'all') return;
-        if (ctx.source === 'playlist') await playPlaylist(playlistTracks[0]);
-        if (ctx.source === 'discover') await playJamendo(tracks[0]);
+        await playPlaylist(ctx.list[0]);
         return;
       }
 
-      if (ctx.source === 'playlist') {
-        await playPlaylist(playlistTracks[ctx.index + 1]);
-        return;
-      }
-      if (ctx.source === 'discover') {
-        await playJamendo(tracks[ctx.index + 1]);
-      }
+      await playPlaylist(ctx.list[ctx.index + 1]);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isShuffle, loopMode, currentTrackId, playlistTracks, tracks]);
+  }, [isShuffle, loopMode, currentTrackId, playlistTracks]);
 
   const togglePlay = async () => {
     const audio = audioRef.current;
@@ -364,14 +338,8 @@ export default function MusicPlayer({
 
     // If nothing loaded yet, start the first item in the current tab.
     if (!audio.src) {
-      if (activeTab === 'playlist' && playlistTracks.length > 0) {
-        await playPlaylist(playlistTracks[0]);
-        return;
-      }
-      if (activeTab === 'discover' && tracks.length > 0) {
-        await playJamendo(tracks[0]);
-        return;
-      }
+      const all = [...playlistTracks, ...ytTracks];
+      if (all.length > 0) await playPlaylist(all[0]);
       return;
     }
 
@@ -433,110 +401,53 @@ export default function MusicPlayer({
         <div className="flex-1 min-h-0 p-3 sm:p-4 flex flex-col lg:flex-row gap-3 sm:gap-4 overflow-hidden">
           {/* Left panel */}
           <div className="lg:w-[360px] lg:min-w-[360px] flex flex-col gap-3 overflow-hidden order-2 lg:order-1">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-2 no-drag">
-              <div className="flex items-center gap-2">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3 mb-3">
+              <div className="text-sm text-white/80 mb-1">
+                Play from YouTube
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  value={ytUrlInput}
+                  onChange={(e) => setYtUrlInput(e.target.value)}
+                  placeholder="Paste YouTube link"
+                  className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white text-sm outline-none"
+                />
+
                 <button
-                  onClick={() => setActiveTab('playlist')}
-                  className={`flex-1 px-3 py-2 rounded-lg border text-sm transition cursor-pointer ${
-                    activeTab === 'playlist'
-                      ? 'bg-pink-500/20 border-pink-500/40 text-pink-200'
-                      : 'bg-white/0 border-white/10 text-white/80 hover:bg-white/10'
-                  }`}
+                  onClick={handlePlayYouTube}
+                  className="px-3 py-2 rounded-lg bg-pink-500/30 text-white text-sm"
                 >
-                  My Playlist
-                </button>
-                <button
-                  onClick={() => setActiveTab('discover')}
-                  className={`flex-1 px-3 py-2 rounded-lg border text-sm transition cursor-pointer ${
-                    activeTab === 'discover'
-                      ? 'bg-pink-500/20 border-pink-500/40 text-pink-200'
-                      : 'bg-white/0 border-white/10 text-white/80 hover:bg-white/10'
-                  }`}
-                >
-                  Discover
+                  Play
                 </button>
               </div>
             </div>
 
-            {activeTab === 'discover' ? (
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3 no-drag">
-                <div className="mt-2 flex justify-between items-center">
-                  <div className="text-xs text-white/60">Up to 50 results</div>
-                  <button
-                    onClick={loadDiscover}
-                    className="text-xs px-2 py-1 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 transition cursor-pointer"
-                  >
-                    Refresh
-                  </button>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-white/80">My Playlist</div>
+                <div className="text-xs text-white/60">
+                  {playlistTracks.length} songs
                 </div>
               </div>
-            ) : (
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-white/80">My Playlist</div>
-                  <div className="text-xs text-white/60">
-                    {playlistTracks.length} songs
-                  </div>
-                </div>
-                <div className="text-xs text-white/60 mt-1">
-                  From assets/MUSIC
-                </div>
+              <div className="text-xs text-white/60 mt-1">
+                From assets/MUSIC
               </div>
-            )}
+            </div>
 
             <div className="flex-1 rounded-xl border border-white/10 bg-white/5 overflow-hidden">
               <div className="h-full overflow-auto custom-scrollbar p-2">
-                {activeTab === 'playlist' ? (
-                  playlistTracks.length === 0 ? (
-                    <div className="text-sm text-white/60 p-2">
-                      No local songs found.
-                    </div>
-                  ) : (
-                    playlistTracks.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => playPlaylist(t)}
-                        className={`w-full text-left px-3 py-2 rounded-xl mb-2 transition no-drag cursor-pointer border ${
-                          String(t.id) === String(currentTrackId)
-                            ? 'bg-pink-500/20 border-pink-500/40'
-                            : 'bg-white/0 hover:bg-white/10 border-white/10'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="text-sm text-white truncate">
-                              {t.title}
-                            </div>
-                            {t.subtitle ? (
-                              <div className="text-xs text-white/60 truncate">
-                                {t.subtitle}
-                              </div>
-                            ) : null}
-                          </div>
-                          <div className="text-xs text-white/40">
-                            {String(t.id) === String(currentTrackId)
-                              ? 'Playing'
-                              : ''}
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  )
-                ) : loading ? (
-                  <div className="text-sm text-white/60 p-2">Loading…</div>
-                ) : error ? (
-                  <div className="text-sm text-red-300 p-2">{error}</div>
-                ) : tracks.length === 0 ? (
+                {playlistTracks.length === 0 ? (
                   <div className="text-sm text-white/60 p-2">
-                    No tracks found.
+                    No local songs found.
                   </div>
                 ) : (
-                  tracks.map((t) => (
+                  playlistTracks.map((t) => (
                     <button
-                      key={String(t.id)}
-                      onClick={() => playJamendo(t)}
+                      key={t.id}
+                      onClick={() => playPlaylist(t)}
                       className={`w-full text-left px-3 py-2 rounded-xl mb-2 transition no-drag cursor-pointer border ${
-                        String(`jm:${t.id}`) === String(currentTrackId)
+                        String(t.id) === String(currentTrackId)
                           ? 'bg-pink-500/20 border-pink-500/40'
                           : 'bg-white/0 hover:bg-white/10 border-white/10'
                       }`}
@@ -544,16 +455,16 @@ export default function MusicPlayer({
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <div className="text-sm text-white truncate">
-                            {t.name}
+                            {t.title}
                           </div>
-                          {t.artist_name ? (
+                          {t.subtitle ? (
                             <div className="text-xs text-white/60 truncate">
-                              {t.artist_name}
+                              {t.subtitle}
                             </div>
                           ) : null}
                         </div>
                         <div className="text-xs text-white/40">
-                          {String(`jm:${t.id}`) === String(currentTrackId)
+                          {String(t.id) === String(currentTrackId)
                             ? 'Playing'
                             : ''}
                         </div>
@@ -570,9 +481,9 @@ export default function MusicPlayer({
             <div className="h-full w-full flex flex-col items-center justify-center text-center">
               <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center mb-4">
                 <img
-                  src={musicIcon}
+                  src={nowPlaying?.thumbnail || musicIcon}
                   alt=""
-                  className="w-20 h-20 sm:w-24 sm:h-24 opacity-90"
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl"
                   draggable={false}
                 />
               </div>
@@ -583,15 +494,13 @@ export default function MusicPlayer({
               </div>
               <div className="mt-1 text-sm text-white/60 truncate max-w-full">
                 {nowPlaying?.subtitle ||
-                  (activeTab === 'playlist'
-                    ? 'Your local playlist'
-                    : 'Discover via Jamendo')}
+                  (nowPlaying?.source === 'youtube'
+                    ? 'YouTube'
+                    : 'Your local playlist')}
               </div>
 
               <div className="mt-3 text-xs text-white/50">
-                {activeTab === 'playlist'
-                  ? `${playlistTracks.length} local tracks`
-                  : `${tracks.length} discover tracks`}
+                {`${playlistTracks.length} local tracks`}
               </div>
             </div>
           </div>
@@ -603,7 +512,11 @@ export default function MusicPlayer({
             {/* Left: track info */}
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden">
-                <img src={musicIcon} alt="" className="w-7 h-7 opacity-90" />
+                <img
+                  src={nowPlaying?.thumbnail || musicIcon}
+                  alt=""
+                  className="w-7 h-7 object-cover rounded-md"
+                />
               </div>
               <div className="min-w-0">
                 <div className="text-sm text-white font-medium truncate">
@@ -646,12 +559,7 @@ export default function MusicPlayer({
                 </button>
                 <button
                   onClick={playNext}
-                  disabled={(() => {
-                    const ctx = getPlaybackContext();
-                    if (ctx.index < 0) return true;
-                    if (ctx.list.length === 0) return true;
-                    return ctx.index >= ctx.list.length - 1;
-                  })()}
+                  disabled={ctx.index < 0 || ctx.index >= ctx.list.length - 1}
                   className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   title="Next"
                 >

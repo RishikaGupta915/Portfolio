@@ -1,60 +1,21 @@
-import express from 'express';
-import fetch from 'node-fetch';
+import express from "express";
+import { execSync } from "child_process";
 
 const router = express.Router();
 
-// Jamendo proxy 
-router.get('/jamendo', async (req, res) => {
+router.post("/getAudio", async (req, res) => {
   try {
-    const clientId = process.env.CLIENT_ID;
-    if (!clientId) {
-      return res.status(500).json({
-        error:
-          'Missing CLIENT_ID.',
-      });
-    }
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: "Missing URL" });
 
-    const limitRaw = req.query?.limit;
-    const limit = Math.min(200, Math.max(1, Number(limitRaw || 50)));
-    const qRaw = req.query?.q;
-    const q = typeof qRaw === 'string' ? qRaw.trim() : '';
+    // Use yt-dlp to get a DIRECT M4A playback URL
+    const command = `yt-dlp -f "bestaudio[ext=m4a]" -g "${url}"`;
+    const audioUrl = execSync(command).toString().trim();
 
-    const params = new URLSearchParams({
-      client_id: clientId,
-      format: 'json',
-      limit: String(limit),
-      audioformat: 'mp32',
-      include: 'musicinfo+stats',
-    });
-
-    if (q) {
-      params.set('namesearch', q);
-    } else {
-      params.set('order', 'popularity_total');
-    }
-
-    const url = `https://api.jamendo.com/v3.0/tracks/?${params.toString()}`;
-
-    const upstream = await fetch(url);
-    const contentType = upstream.headers.get('content-type') || '';
-    const data = contentType.includes('application/json')
-      ? await upstream.json()
-      : { error: await upstream.text() };
-
-    if (!upstream.ok) {
-      return res.status(502).json({
-        error: 'Jamendo upstream request failed',
-        upstreamStatus: upstream.status,
-        details: data,
-      });
-    }
-
-    return res.status(200).json({
-      results: Array.isArray(data?.results) ? data.results : [],
-    });
+    return res.json({ audioUrl });
   } catch (err) {
-    console.error('Jamendo proxy error:', err);
-    return res.status(500).json({ error: 'Jamendo request failed' });
+    console.error("yt-dlp error:", err);
+    return res.status(500).json({ error: "Could not extract audio" });
   }
 });
 
