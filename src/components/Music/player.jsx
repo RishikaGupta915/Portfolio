@@ -142,11 +142,14 @@ export default function MusicPlayer({
     if (!ytUrlInput) return;
 
     try {
-      const r = await fetch('http://localhost:5000/api/music/getAudio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: ytUrlInput }),
-      });
+      const r = await fetch(
+        'https://trace-lanes-mood-command.trycloudflare.com/api/music/getAudio',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: ytUrlInput }),
+        }
+      );
 
       const data = await r.json();
       if (!data.audioUrl) return;
