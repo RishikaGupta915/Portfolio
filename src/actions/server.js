@@ -18,6 +18,7 @@ app.use(
       'http://localhost:5173',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5173',
+      'https://rii-sable.vercel.app',
     ],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -57,6 +58,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Mount feature routes
+app.use(express.json());
 app.use('/api', chatbotRouter);
 app.use('/api/music', musicRouter);
 
