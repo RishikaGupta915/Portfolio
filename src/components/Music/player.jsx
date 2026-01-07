@@ -143,7 +143,7 @@ export default function MusicPlayer({
 
     try {
       const r = await fetch(
-        ' https://milan-tested-aus-absorption.trycloudflare.com/api/music/getAudio',
+        ' https://jeans-fog-psychology-exact.trycloudflare.com/api/music/getAudio',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
