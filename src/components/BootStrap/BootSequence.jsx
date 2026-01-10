@@ -259,7 +259,7 @@ function BootSequence({ onComplete }) {
                   marginBottom: '1.5rem',
                 }}
               >
-                <span style={{ color: '#00ffff' }}>✨</span>
+                <span style={{ color: '#00ffff' }}>✮</span>
               </motion.div>
 
               <motion.h2

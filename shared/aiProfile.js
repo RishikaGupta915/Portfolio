@@ -52,5 +52,6 @@ Education:
 Contact:
 - Email: rishikagupta915@gmail.com
 - GitHub: https://github.com/RishikaGupta915
+- LinkedIn: https://www.linkedin.com/in/rishika-gupta-8440263a4/
 `;
 }

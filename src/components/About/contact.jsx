@@ -19,7 +19,7 @@ export default function Contact({ onClose }) {
     phone: '+91 8918681988',
     location: 'Darjeeling, WB, India',
     github: 'https://github.com/RishikaGupta915',
-    linkedin: '',
+    linkedin: 'https://www.linkedin.com/in/rishika-gupta-8440263a4/',
   };
 
   const [nameText, setNameText] = useState('');
