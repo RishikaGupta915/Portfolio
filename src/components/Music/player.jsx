@@ -142,22 +142,13 @@ export default function MusicPlayer({
     if (!ytUrlInput) return;
 
     try {
-      const r = await fetch(
-        ' https://jeans-fog-psychology-exact.trycloudflare.com/api/music/getAudio',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: ytUrlInput }),
-        }
-      );
-
-      const data = await r.json();
-      if (!data.audioUrl) return;
+      const streamUrl = `https://nova-goals-anthony-poem.trycloudflare.com/api/music/stream?url=${encodeURIComponent(
+        ytUrlInput
+      )}`;
 
       const id = 'yt:' + ytUrlInput;
       const videoId = getYouTubeId(ytUrlInput);
 
-      // Pick best thumbnail
       const thumb = videoId
         ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
         : null;
@@ -169,7 +160,7 @@ export default function MusicPlayer({
           id,
           title: 'YouTube Stream',
           subtitle: ytUrlInput,
-          url: data.audioUrl,
+          url: streamUrl,
           thumbnail: thumb,
           source: 'youtube',
         },
@@ -177,10 +168,10 @@ export default function MusicPlayer({
 
       await playUrl({
         id,
-        url: data.audioUrl,
+        url: streamUrl,
       });
     } catch {
-      console.log('Failed to play YouTube');
+      console.log('Failed to play YouTube URL');
     }
   };
 

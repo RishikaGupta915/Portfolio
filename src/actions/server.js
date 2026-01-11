@@ -58,7 +58,6 @@ app.get('/api/health', (req, res) => {
 });
 
 // Mount feature routes
-app.use(express.json());
 app.use('/api', chatbotRouter);
 app.use('/api/music', musicRouter);
 

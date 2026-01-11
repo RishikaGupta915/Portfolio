@@ -1,22 +1,29 @@
 import express from "express";
-import { execSync } from "child_process";
+import { spawn } from "child_process";
 
 const router = express.Router();
 
-router.post("/getAudio", async (req, res) => {
-  try {
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ error: "Missing URL" });
+router.get("/stream", (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).send("Missing URL");
 
-    // Use yt-dlp to get a DIRECT M4A playback URL
-    const command = `yt-dlp -f "bestaudio[ext=m4a]" -g "${url}"`;
-    const audioUrl = execSync(command).toString().trim();
+  res.setHeader("Content-Type", "audio/mpeg");
+  res.setHeader("Transfer-Encoding", "chunked");
 
-    return res.json({ audioUrl });
-  } catch (err) {
-    console.error("yt-dlp error:", err);
-    return res.status(500).json({ error: "Could not extract audio" });
-  }
+  const yt = spawn("yt-dlp", [
+    "-f", "bestaudio/best",
+    "--extract-audio",
+    "--audio-format", "mp3",
+    "-o", "-",
+    url
+  ]);
+
+  yt.stdout.pipe(res);
+
+  yt.stderr.on("data", () => {});
+  yt.on("close", () => res.end());
+
+  req.on("close", () => yt.kill("SIGKILL"));
 });
 
 export default router;
