@@ -142,7 +142,7 @@ export default function MusicPlayer({
     if (!ytUrlInput) return;
 
     try {
-      const streamUrl = `https://nova-goals-anthony-poem.trycloudflare.com/api/music/stream?url=${encodeURIComponent(
+      const streamUrl = `https://matter-starting-replace-hayes.trycloudflare.com/api/music/stream?q=${encodeURIComponent(
         ytUrlInput
       )}`;
 
