@@ -59,7 +59,7 @@ app.get('/api/health', (req, res) => {
 
 // Mount feature routes
 app.use('/api', chatbotRouter);
-app.use('/api/music', musicRouter);
+app.use("/api/music", musicRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

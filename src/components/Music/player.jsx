@@ -96,6 +96,7 @@ export default function MusicPlayer({
   const [ytUrlInput, setYtUrlInput] = useState('');
   const [ytTracks, setYtTracks] = useState([]);
   const [ytThumbnail, setYtThumbnail] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
 
   const formatTime = (sec) => {
     const s = Number.isFinite(sec) ? Math.max(0, sec) : 0;
@@ -138,41 +139,48 @@ export default function MusicPlayer({
     return null;
   }, [currentTrackId, playlistTracks, ytTracks]);
 
+  const isYouTubeLink = (s) =>
+    s.includes('youtube.com') || s.includes('youtu.be');
+
   const handlePlayYouTube = async () => {
     if (!ytUrlInput) return;
 
-    try {
-      const streamUrl = `https://matter-starting-replace-hayes.trycloudflare.com/api/music/stream?q=${encodeURIComponent(
-        ytUrlInput
-      )}`;
-
-      const id = 'yt:' + ytUrlInput;
-      const videoId = getYouTubeId(ytUrlInput);
-
-      const thumb = videoId
-        ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
-        : null;
-
-      setYtThumbnail(thumb);
-
-      setYtTracks([
-        {
-          id,
-          title: 'YouTube Stream',
-          subtitle: ytUrlInput,
-          url: streamUrl,
-          thumbnail: thumb,
-          source: 'youtube',
-        },
-      ]);
-
-      await playUrl({
-        id,
-        url: streamUrl,
-      });
-    } catch {
-      console.log('Failed to play YouTube URL');
+    // If user pasted a link → play directly
+    if (isYouTubeLink(ytUrlInput)) {
+      await playFromUrl(ytUrlInput);
+      return;
     }
+
+    // Else → SEARCH MODE
+    const r = await fetch(
+      `https://validity-ata-shaped-wheel.trycloudflare.com/api/music/search?q=${encodeURIComponent(
+        ytUrlInput
+      )}`
+    );
+    const data = await r.json();
+    setSearchResults(data);
+  };
+
+  const playFromResult = async (video) => {
+    const streamUrl = `https://validity-ata-shaped-wheel.trycloudflare.com/api/music/stream?url=${encodeURIComponent(
+      video.url
+    )}`;
+
+    setYtTracks([
+      {
+        id: 'yt:' + video.id,
+        title: video.title,
+        subtitle: video.channel,
+        url: streamUrl,
+        thumbnail: video.thumbnail,
+        source: 'youtube',
+      },
+    ]);
+
+    await playUrl({
+      id: 'yt:' + video.id,
+      url: streamUrl,
+    });
   };
 
   useEffect(() => {
@@ -415,6 +423,27 @@ export default function MusicPlayer({
                   Play
                 </button>
               </div>
+
+              {searchResults.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {searchResults.map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={() => playFromResult(v)}
+                      className="w-full flex gap-3 p-2 rounded-lg bg-white/5 hover:bg-white/10"
+                    >
+                      <img src={v.thumbnail} className="w-12 h-12 rounded" />
+                      <div className="text-left">
+                        <div className="text-sm text-white">{v.title}</div>
+                        <div className="text-xs text-white/60">
+                          {v.channel} • {Math.floor(v.duration / 60)}:
+                          {String(v.duration % 60).padStart(2, '0')}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
