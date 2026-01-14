@@ -1,21 +1,30 @@
 import express from "express";
-import { spawn , execSync  } from "child_process";
+import { execSync } from "child_process";
 
 const router = express.Router();
 
-const isYouTubeUrl = (input) =>
-  /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(input);
+const searchCache = new Map();
+const streamCache = new Map();
 
+//search filter
 router.get("/search", (req, res) => {
   const q = req.query.q;
   if (!q) return res.status(400).json({ error: "Missing q" });
 
+  if (searchCache.has(q)) {
+    return res.json(searchCache.get(q));
+  }
+
   try {
-    const cmd = `yt-dlp "ytsearch5:${q}" --dump-json --skip-download`;
-    const raw = execSync(cmd).toString().trim().split("\n");
+    const raw = execSync(
+      `yt-dlp "ytsearch5:${q}" --dump-json --skip-download`
+    )
+      .toString()
+      .trim()
+      .split("\n");
 
     const results = raw
-      .map((line) => JSON.parse(line))
+      .map((l) => JSON.parse(l))
       .filter((v) => {
         if (!v.duration || v.duration < 60) return false;
         if (v.duration > 10 * 60) return false;
@@ -33,6 +42,9 @@ router.get("/search", (req, res) => {
         url: `https://youtu.be/${v.id}`,
       }));
 
+    searchCache.set(q, results);
+    setTimeout(() => searchCache.delete(q), 15 * 60 * 1000);
+
     res.json(results);
   } catch (err) {
     console.error(err);
@@ -40,29 +52,30 @@ router.get("/search", (req, res) => {
   }
 });
 
+//stream 
 router.get("/stream", (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).send("Missing url");
 
-  res.setHeader("Content-Type", "audio/mpeg");
-  res.setHeader("Transfer-Encoding", "chunked");
+  if (streamCache.has(url)) {
+    return res.redirect(streamCache.get(url));
+  }
 
-  const yt = spawn("yt-dlp", [
-    "-f", "bestaudio",
-    "--extract-audio",
-    "--audio-format", "mp3",
-    "-o", "-",
-    url,
-  ]);
+  try {
+    const audioUrl = execSync(
+      `yt-dlp -f bestaudio -g "${url}"`
+    )
+      .toString()
+      .trim();
 
-  yt.stdout.pipe(res);
+    streamCache.set(url, audioUrl);
+    setTimeout(() => streamCache.delete(url), 30 * 60 * 1000);
 
-  yt.stderr.on("data", () => {});
-  yt.on("close", () => res.end());
-
-  req.on("close", () => yt.kill("SIGKILL"));
+    res.redirect(audioUrl);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Stream failed");
+  }
 });
-
-
 
 export default router;
