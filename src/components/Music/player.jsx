@@ -153,7 +153,7 @@ export default function MusicPlayer({
 
     // Else → SEARCH MODE
     const r = await fetch(
-      `https://pour-annex-managing-facility.trycloudflare.com/api/music/search?q=${encodeURIComponent(
+      `https://geology-volume-heather-millennium.trycloudflare.com/api/music/search?q=${encodeURIComponent(
         ytUrlInput
       )}`
     );
@@ -162,7 +162,7 @@ export default function MusicPlayer({
   };
 
   const playFromResult = async (video) => {
-    const streamUrl = `https://pour-annex-managing-facility.trycloudflare.com/api/music/stream?url=${encodeURIComponent(
+    const streamUrl = `https://geology-volume-heather-millennium.trycloudflare.com/api/music/stream?url=${encodeURIComponent(
       video.url
     )}`;
 
