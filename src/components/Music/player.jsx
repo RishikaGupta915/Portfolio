@@ -71,6 +71,13 @@ function getYouTubeId(url) {
   return match ? match[1] : null;
 }
 
+const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').replace(
+  /\/$/,
+  ''
+);
+
+const buildApiUrl = (path) => `${API_BASE_URL}${path}`;
+
 export default function MusicPlayer({
   isOpen,
   onClose,
@@ -97,6 +104,10 @@ export default function MusicPlayer({
   const [ytTracks, setYtTracks] = useState([]);
   const [ytThumbnail, setYtThumbnail] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const searchAbortRef = useRef(null);
+  const searchCacheRef = useRef(new Map());
 
   const formatTime = (sec) => {
     const s = Number.isFinite(sec) ? Math.max(0, sec) : 0;
@@ -143,28 +154,58 @@ export default function MusicPlayer({
     s.includes('youtube.com') || s.includes('youtu.be');
 
   const handlePlayYouTube = async () => {
-    if (!ytUrlInput) return;
+    const rawInput = String(ytUrlInput || '').trim();
+    if (!rawInput) return;
 
     // If user pasted a link → play directly
-    if (isYouTubeLink(ytUrlInput)) {
-      await playFromUrl(ytUrlInput);
+    if (isYouTubeLink(rawInput)) {
+      await playFromUrl(rawInput);
       return;
     }
 
     // Else → SEARCH MODE
-    const r = await fetch(
-      `https://geology-volume-heather-millennium.trycloudflare.com/api/music/search?q=${encodeURIComponent(
-        ytUrlInput
-      )}`
-    );
-    const data = await r.json();
-    setSearchResults(data);
+    const q = rawInput.toLowerCase();
+    setSearchError('');
+
+    if (searchCacheRef.current.has(q)) {
+      setSearchResults(searchCacheRef.current.get(q));
+      return;
+    }
+
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    setIsSearching(true);
+
+    try {
+      const r = await fetch(
+        buildApiUrl(`/api/music/search?q=${encodeURIComponent(q)}`),
+        { signal: controller.signal }
+      );
+
+      if (!r.ok) {
+        throw new Error('Search failed');
+      }
+
+      const data = await r.json();
+      searchCacheRef.current.set(q, data);
+      setSearchResults(data);
+    } catch (err) {
+      if (err?.name !== 'AbortError') {
+        setSearchError('Search failed. Please try again.');
+      }
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const playFromResult = async (video) => {
-    const streamUrl = `https://geology-volume-heather-millennium.trycloudflare.com/api/music/stream?url=${encodeURIComponent(
-      video.url
-    )}`;
+    const streamUrl = buildApiUrl(
+      `/api/music/stream?url=${encodeURIComponent(video.url)}`
+    );
 
     setYtTracks([
       {
@@ -182,6 +223,14 @@ export default function MusicPlayer({
       url: streamUrl,
     });
   };
+
+  useEffect(() => {
+    return () => {
+      if (searchAbortRef.current) {
+        searchAbortRef.current.abort();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // If the window is closed and background playback is NOT allowed, stop audio.
@@ -217,6 +266,7 @@ export default function MusicPlayer({
     audio.addEventListener('volumechange', onVol);
     audio.addEventListener('ended', onEnded);
 
+    audio.preload = 'auto';
     audio.volume = volume;
     onTime();
     onMeta();
@@ -418,11 +468,20 @@ export default function MusicPlayer({
 
                 <button
                   onClick={handlePlayYouTube}
-                  className="px-3 py-2 rounded-lg bg-pink-500/30 text-white text-sm"
+                  disabled={isSearching}
+                  className={`px-3 py-2 rounded-lg text-white text-sm ${
+                    isSearching
+                      ? 'bg-white/10 cursor-not-allowed'
+                      : 'bg-pink-500/30'
+                  }`}
                 >
-                  Play
+                  {isSearching ? 'Searching…' : 'Play'}
                 </button>
               </div>
+
+              {searchError && (
+                <div className="mt-2 text-xs text-red-300">{searchError}</div>
+              )}
 
               {searchResults.length > 0 && (
                 <div className="mt-3 space-y-2">

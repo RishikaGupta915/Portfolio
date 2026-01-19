@@ -1,27 +1,58 @@
 import express from "express";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 
 const router = express.Router();
 
 const searchCache = new Map();
 const streamCache = new Map();
+const SEARCH_TTL_MS = 30 * 60 * 1000;
+const STREAM_TTL_MS = 2 * 60 * 60 * 1000;
 
 //search filter
 router.get("/search", (req, res) => {
   const q = req.query.q;
   if (!q) return res.status(400).json({ error: "Missing q" });
+  const qKey = String(q).trim().toLowerCase();
+  if (!qKey) return res.status(400).json({ error: "Missing q" });
 
-  if (searchCache.has(q)) {
-    return res.json(searchCache.get(q));
+  if (searchCache.has(qKey)) {
+    return res.json(searchCache.get(qKey));
   }
 
   try {
-    const raw = execSync(
-      `yt-dlp "ytsearch5:${q}" --dump-json --skip-download`
-    )
-      .toString()
-      .trim()
-      .split("\n");
+    const args = [
+      `ytsearch5:${qKey}`,
+      "--dump-json",
+      "--skip-download",
+      "--no-warnings",
+      "--ignore-errors",
+    ];
+
+    let output = "";
+    try {
+      output = execFileSync("yt-dlp", args, {
+        encoding: "utf8",
+        maxBuffer: 5 * 1024 * 1024,
+      })
+        .toString()
+        .trim();
+    } catch (err) {
+      const partial = err?.stdout?.toString()?.trim();
+      if (partial) {
+        output = partial;
+      } else {
+        console.error(err);
+        return res.status(500).json({ error: "Search failed" });
+      }
+    }
+
+    if (!output) {
+      searchCache.set(qKey, []);
+      setTimeout(() => searchCache.delete(qKey), SEARCH_TTL_MS);
+      return res.json([]);
+    }
+
+    const raw = output.split("\n");
 
     const results = raw
       .map((l) => JSON.parse(l))
@@ -42,8 +73,8 @@ router.get("/search", (req, res) => {
         url: `https://youtu.be/${v.id}`,
       }));
 
-    searchCache.set(q, results);
-    setTimeout(() => searchCache.delete(q), 15 * 60 * 1000);
+    searchCache.set(qKey, results);
+    setTimeout(() => searchCache.delete(qKey), SEARCH_TTL_MS);
 
     res.json(results);
   } catch (err) {
@@ -62,14 +93,32 @@ router.get("/stream", (req, res) => {
   }
 
   try {
-    const audioUrl = execSync(
-      `yt-dlp -f bestaudio -g "${url}"`
-    )
-      .toString()
-      .trim();
+    const args = ["-f", "bestaudio", "-g", String(url)];
+    let audioUrl = "";
+
+    try {
+      audioUrl = execFileSync("yt-dlp", args, {
+        encoding: "utf8",
+        maxBuffer: 5 * 1024 * 1024,
+      })
+        .toString()
+        .trim();
+    } catch (err) {
+      const partial = err?.stdout?.toString()?.trim();
+      if (partial) {
+        audioUrl = partial;
+      } else {
+        console.error(err);
+        return res.status(500).send("Stream failed");
+      }
+    }
+
+    if (!audioUrl) {
+      return res.status(404).send("No audio stream found");
+    }
 
     streamCache.set(url, audioUrl);
-    setTimeout(() => streamCache.delete(url), 30 * 60 * 1000);
+    setTimeout(() => streamCache.delete(url), STREAM_TTL_MS);
 
     res.redirect(audioUrl);
   } catch (e) {
